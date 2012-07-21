@@ -1,21 +1,29 @@
+from django.shortcuts import render_to_response
 from django.http import HttpResponse
+from sensors.models import SensorReading
 
 import datetime
 
 def home(request):
-        return HttpResponse("Hello, world. You're at the poll index.")
-
+    return HttpResponse("Hello, world. You're at the poll index.")
 
 def year_detail(request, year):
-        return HttpResponse("You're at the year detail for %s." % (year,))
+    return HttpResponse("zzzYou're at the year detail for %s." % (year,))
 
 def month_detail(request, year, month):
-        return HttpResponse("You're at the month detail for %s/%s" % (month, year))
+    return HttpResponse("You're at the month detail for %s/%s" % (month, year))
 
 def day_detail(request, year, month, day):
-        try:
-            ymd = datetime.date(int(year), int(month), int(day))
-        except ValueError:
-            s = "Bad date format"
-            ymd = None
-        return HttpResponse("You're at the day detail for %s/%s/%s (%s)." % (day, month, year, ymd))
+    try:
+        ymd = datetime.date(int(year), int(month), int(day))
+    except ValueError:
+        s = "Bad date format"
+        ymd = None
+    return HttpResponse("You're at the day detail for %s/%s/%s (%s)." % (day, month, year, ymd))
+
+def latest_detail(request):
+    """
+    stuffs
+    """
+    latest_reading = SensorReading.objects.all().order_by('-datetime_read')[:1][0]
+    return render_to_response('sensors/one_reading.html', {'one_reading': latest_reading})

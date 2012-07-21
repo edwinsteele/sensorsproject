@@ -1,0 +1,8 @@
+{% if one_reading %}
+    Time of reading: {{ one_reading.datetime_read }}<br>
+    Temperature: {{ one_reading.temperature_celcius }}<br>
+    Humidity: {{  one_reading.humidity_percent }}<br>
+{% else %}
+   No reading available.
+{% endif %}
+
