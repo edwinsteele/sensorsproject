@@ -1,8 +1,26 @@
+<!-- TODO: extend from base template -->
 {% if one_reading %}
+<h1>Current reading</h1>
     Time of reading: {{ one_reading.datetime_read }}<br>
-    Temperature: {{ one_reading.temperature_celcius }}<br>
+    Temperature: {{ one_reading.temperature_celsius }}<br>
     Humidity: {{  one_reading.humidity_percent }}<br>
 {% else %}
-   No reading available.
+    No reading available.<br>
 {% endif %}
 
+<!-- TODO: graph this -->
+<h1>Recent history</h1>
+{% if reading_context %}
+    <table border=1>
+    <thead><tr><th>Time</th><th>Temp</th><th>Humidity</th></tr></thead>
+    {%  for reading in reading_context %}
+        <tr>
+            <td>{{ reading.datetime_read }}</td>
+            <td>{{ reading.temperature_celsius }}</td>
+            <td>{{ reading.humidity_percent }}</td>
+        </tr>
+    {%  endfor %}
+    </table>
+{% else %}
+    No context available.<br>
+{%  endif %}
