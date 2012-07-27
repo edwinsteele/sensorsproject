@@ -1,7 +1,12 @@
-<!-- TODO: extend from base template -->
+{% extends "sensors/base.html" %}
+
+{% block title %}Sensors latest reading{% endblock %}
+
+{% block content %}
 {% if one_reading %}
+<!-- TODO: show trending and give some quick context -->
 <h1>Current reading</h1>
-    Time of reading: {{ one_reading.datetime_read }}<br>
+    Time of reading: {{ one_reading.datetime_read }} ({{ one_reading.compact_date }})<br>
     Temperature: {{ one_reading.temperature_celsius }}<br>
     Humidity: {{  one_reading.humidity_percent }}<br>
 {% else %}
@@ -13,7 +18,7 @@
 {% if reading_context %}
     <table border=1>
     <thead><tr><th>Time</th><th>Temp</th><th>Humidity</th></tr></thead>
-    {%  for reading in reading_context %}
+    {% for reading in reading_context %}
         <tr>
             <td>{{ reading.datetime_read }}</td>
             <td>{{ reading.temperature_celsius }}</td>
@@ -21,6 +26,16 @@
         </tr>
     {%  endfor %}
     </table>
+
+<script type="text/javascript">
+
+var datetimeData = [{% for reading in reading_context %}"{{ reading.datetime_read }}",{%  endfor %}];
+var temperatureData = [{% for reading in reading_context %}{{ reading.temperature_celsius }},{%  endfor %}];
+var humidityData = [{% for reading in reading_context %}{{ reading.humidity_percent }},{%  endfor %}];
+
+</script>
+
 {% else %}
     No context available.<br>
 {%  endif %}
+{% endblock %}

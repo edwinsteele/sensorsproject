@@ -15,3 +15,7 @@ class SensorReading(models.Model):
     def __unicode__(self):
         return "Reading from sensor %s at %s - temp: %s hum: %s" % \
             (self.location, self.datetime_read, self.temperature_celsius, self.humidity_percent)
+
+    def compact_date(self):
+        return self.datetime_read.strftime("%H:%M %z")
+
