@@ -6,7 +6,7 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
 from sensors.models import SensorReading, SensorLocation
 import SensorReadingProvider
 import serial
-#import serial.tools.list_ports
+import serial.tools.list_ports
 
 from datetime import datetime
 from dateutil.tz import tzlocal
@@ -28,14 +28,23 @@ def wait_until_the_next_minute():
 
 lounge_room_sensor = SensorLocation.objects.get(pk=1)
 
-# TODO - improve setup process (cmdline args? auto-detect?
-# Right USB port
-arduino_serial = serial.Serial('/dev/tty.usbmodem411', 38400)
-# Left USB port
-#arduino_serial = serial.Serial('/dev/tty.usbmodem621', 38400)
-srp = SensorReadingProvider.SensorReadingProvider(arduino_serial)
+# On my macbook, these physical USB ports exist
+RIGHT_MACBOOK_USB_PORT="/dev/tty.usbmodem411"
+LEFT_MACBOOK_USB_PORT="/dev/tty.usbmodem621"
 
-#srp = SensorReadingProvider.SimulatedSensorReadingProvider(None)
+usbmodem_devices = serial.tools.list_ports.grep(".*tty\.usbmodem[0-9]")
+
+if len(list(usbmodem_devices)) == 1:
+    possible_arduino = list(usbmodem_devices)[0]
+    print "Found a possible USB-connected Arduino boards on %s" % (possible_arduino,)
+    print "Assuming it's an Arduino. Connecting..."
+    arduino_serial = serial.Serial(possible_arduino, 38400)
+    #arduino_serial = serial.Serial('/dev/tty.usbmodem621', 38400)
+    srp = SensorReadingProvider.SensorReadingProvider(arduino_serial)
+
+else:
+    print "No USB-connected Arduino boards. Using Simulated Sensor."
+    srp = SensorReadingProvider.SimulatedSensorReadingProvider(None)
 
 latest_humidity_percent = srp.get_latest_humidity()
 latest_temperature_celsius = srp.get_latest_temperature()
