@@ -66,6 +66,6 @@ class SimulatedSensorReadingProvider(SensorReadingProvider):
         """
         Simulates a request and response from a sensor, including the time taken to obtain the reading.
         """
-        self.last_humidity_reading, self.last_temperature_reading = self.srg.next()
+        self.last_temperature_reading, self.last_humidity_reading = self.srg.next()
         time.sleep(0.25)
 
