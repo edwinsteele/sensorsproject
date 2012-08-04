@@ -9,36 +9,95 @@
 <h1>Current reading</h1>
     {% else %}
 <h1>Most recent reading</h1>
+Time of reading: {{ one_reading.datetime_read }} ({{ one_reading.compact_date }})<br>
     {% endif %}
-
-    Time of reading: {{ one_reading.datetime_read }} ({{ one_reading.compact_date }})<br>
-    Temperature: {{ one_reading.temperature_celsius }}<br>
-    Humidity: {{  one_reading.humidity_percent }}<br>
+Temperature: {{ one_reading.temperature_celsius }}<br>
+Humidity: {{  one_reading.humidity_percent }}<br>
 {% else %}
     No reading available.<br>
 {% endif %}
+
+<style>
+    #chart_container {
+        position: relative;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    #chart {
+        position: relative;
+        left: 40px;
+    }
+    #y_axis {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40px;
+    }
+</style>
+
+<div id="chart_container">
+    <div id="y_axis"></div>
+    <div id="chart"></div>
+    <div id="x_axis"></div>
+</div>
 
 <!-- TODO: graph this -->
 <h1>Recent history</h1>
 {% if reading_context %}
     <table border=1>
-    <thead><tr><th>Time</th><th>Temp</th><th>Humidity</th><th>warmness</th><th>currency</th></tr></thead>
+    <thead><tr><th>Time</th><th>Temp</th><th>Humidity</th><th>secs since epoch</th><th>currency</th></tr></thead>
     {% for reading in reading_context %}
         <tr>
             <td>{{ reading.datetime_read }}</td>
             <td>{{ reading.temperature_celsius }}</td>
             <td>{{ reading.humidity_percent }}</td>
-            <td>{{ reading.is_warm }}</td>
+            <td>{{ reading.datetime_read_as_seconds_since_epoch }}</td>
             <td>{{ reading.is_current }}</td>
         </tr>
     {%  endfor %}
     </table>
+<link type="text/css" rel="stylesheet" href="http://localhost/~esteele/github/sensorsproject/lib/rickshaw.min.css">
+<script src="http://localhost/~esteele/github/sensorsproject/lib/vendor/d3.min.js"></script>
+<script src="http://localhost/~esteele/github/sensorsproject/lib/vendor/d3.layout.min.js"></script>
+<script src="http://localhost/~esteele/github/sensorsproject/lib/rickshaw.min.js"></script>
 
 <script type="text/javascript">
 
-var datetimeData = [{% for reading in reading_context %}"{{ reading.datetime_read }}",{%  endfor %}];
-var temperatureData = [{% for reading in reading_context %}{{ reading.temperature_celsius }},{%  endfor %}];
-var humidityData = [{% for reading in reading_context %}{{ reading.humidity_percent }},{%  endfor %}];
+var temperature_data = [
+    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch }}, y: {{ reading.temperature_celsius }} },
+    {% endfor %}];
+var humidity_data = [
+    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch }}, y: {{ reading.temperature_celsius }} },
+    {% endfor %}];
+
+var graph = new Rickshaw.Graph( {
+    element: document.querySelector("#chart"),
+    width: 700,
+    height: 200,
+    series: [{
+        name: "Temperature",
+        data: temperature_data,
+        color: "blue"
+    },
+    {
+        name: "Humidity",
+        data: humidity_data,
+        color: "red"
+    }]
+});
+
+<!-- TODO: Times on the axis are shown in UTC, make them in local time -->
+var x_axis = new Rickshaw.Graph.Axis.Time( {
+    graph: graph
+});
+
+var y_axis = new Rickshaw.Graph.Axis.Y( {
+    graph: graph,
+    orientation: 'left',
+    element: document.getElementById('y_axis')
+} );
+
+
+graph.render();
 
 </script>
 

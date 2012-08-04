@@ -2,7 +2,8 @@ from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from sensors.models import SensorReading
 
-import datetime
+from datetime import date, datetime, timedelta
+from dateutil.tz import tzlocal
 
 def home(request):
     return HttpResponse("Hello, world. You're at the poll index.")
@@ -15,9 +16,9 @@ def month_detail(request, year, month):
 
 def day_detail(request, year, month, day):
     try:
-        ymd = datetime.date(int(year), int(month), int(day))
+        ymd = date(int(year), int(month), int(day))
     except ValueError:
-        s = "Bad date format"
+        # Bad date format
         ymd = None
     return HttpResponse("You're at the day detail for %s/%s/%s (%s)." % (day, month, year, ymd))
 
@@ -26,10 +27,11 @@ def latest_detail(request):
     stuffs
     """
     # TODO: Make more resilient if there aren't any database objects
+    # TODO: is this really the most efficient way to get the most recent reading?
     latest_reading = SensorReading.objects.all().order_by('-datetime_read')[:1][0]
     # Are there any cases where latest reading might not be included in last_hour_readings?
-    # TODO: last_hour_readings isn't really a correct name. It's historical readings
-    last_hour_readings = SensorReading.objects.all().order_by('datetime_read')[:60].reverse()
+    one_hour_ago = datetime.now(tz=tzlocal()) - timedelta(seconds=3600)
+    last_hour_readings = SensorReading.objects.filter(datetime_read__gte=one_hour_ago)
     return render_to_response('sensors/one_reading.html', {
         'one_reading': latest_reading,
         'reading_context': last_hour_readings,

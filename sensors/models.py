@@ -2,6 +2,7 @@ from django.db import models
 from datetime import datetime
 from dateutil.tz import tzlocal
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,9 @@ class SensorReading(models.Model):
         logger.debug("Delta seconds = %s" % (delta.seconds,))
         return delta.seconds < 120
 
-    def is_warm(self):
-        return self.temperature_celsius > 90
+    def datetime_read_as_seconds_since_epoch(self):
+        return time.mktime(self.datetime_read.astimezone(tzlocal()).timetuple())
 
     def compact_date(self):
-        return self.datetime_read.strftime("%H:%M %z")
+        return self.datetime_read.astimezone(tzlocal()).strftime("%H.%M")
 
