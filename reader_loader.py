@@ -59,7 +59,9 @@ while 1:
     latest_humidity_percent = srp.get_latest_humidity()
     latest_temperature_celsius = srp.get_latest_temperature()
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)
-    print "%s: %sc %s%%" % (current_datetime_no_secs, latest_temperature_celsius, latest_humidity_percent)
+    # TODO: Track down why there are sometimes two readings recorded for the same minute
+    print "%s: Inserting reading... %s: %sc %s%%" % \
+          (datetime.now(tz=tzlocal()), current_datetime_no_secs, latest_temperature_celsius, latest_humidity_percent)
     SensorReading.objects.create(datetime_read=current_datetime_no_secs,
         temperature_celsius=latest_temperature_celsius,
         humidity_percent=latest_humidity_percent,
