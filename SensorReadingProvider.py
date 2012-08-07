@@ -60,6 +60,8 @@ class SimulatedSensorReadingProvider(SensorReadingProvider):
         while True:
             t_celsius += Decimal(str(random.choice((-1,1))/20.0))
             h_percent += Decimal(str(random.choice((-1,1))/20.0))
+            # Cap humidity at 99% - it'll bork the db otherwise
+            h_percent = min(Decimal("99"), h_percent)
             yield [t_celsius, h_percent]
 
     def _record_sensor_reading(self):
