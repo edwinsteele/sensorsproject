@@ -32,13 +32,19 @@ Humidity: {{  one_reading.humidity_percent }}<br>
         bottom: 0;
         width: 40px;
     }
+    #legend {
+        display: inline-block;
+        vertical-align: top;
+        margin: 0 0 0 10px;
+    }
 </style>
 
 <div id="chart_container">
     <div id="y_axis"></div>
     <div id="chart"></div>
-    <div id="x_axis"></div>
 </div>
+<div id="legend"></div>
+
 
 <!-- TODO: graph this -->
 <h1>Recent history</h1>
@@ -55,10 +61,11 @@ Humidity: {{  one_reading.humidity_percent }}<br>
         </tr>
     {%  endfor %}
     </table>
-<link type="text/css" rel="stylesheet" href="http://localhost/~esteele/github/sensorsproject/lib/rickshaw.min.css">
-<script src="http://localhost/~esteele/github/sensorsproject/lib/vendor/d3.min.js"></script>
-<script src="http://localhost/~esteele/github/sensorsproject/lib/vendor/d3.layout.min.js"></script>
-<script src="http://localhost/~esteele/github/sensorsproject/lib/rickshaw.min.js"></script>
+<!-- TODO: Have these resources accessible through the Django server/project -->
+<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}/rickshaw.min.css">
+<script src="{{ STATIC_URL }}/vendor/d3.min.js"></script>
+<script src="{{ STATIC_URL }}/vendor/d3.layout.min.js"></script>
+<script src="{{ STATIC_URL }}/rickshaw.min.js"></script>
 
 <script type="text/javascript">
 
@@ -69,6 +76,8 @@ var humidity_data = [
     {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch }}, y: {{ reading.temperature_celsius }} },
     {% endfor %}];
 
+var palette = new Rickshaw.Color.Palette();
+
 var graph = new Rickshaw.Graph( {
     element: document.querySelector("#chart"),
     width: 700,
@@ -76,12 +85,12 @@ var graph = new Rickshaw.Graph( {
     series: [{
         name: "Temperature",
         data: temperature_data,
-        color: "blue"
+        color: palette.color()
     },
     {
         name: "Humidity",
         data: humidity_data,
-        color: "red"
+        color: palette.color()
     }]
 });
 
@@ -96,6 +105,10 @@ var y_axis = new Rickshaw.Graph.Axis.Y( {
     element: document.getElementById('y_axis')
 } );
 
+var legend = new Rickshaw.Graph.Legend( {
+    element: document.querySelector('#legend'),
+    graph: graph
+} );
 
 graph.render();
 

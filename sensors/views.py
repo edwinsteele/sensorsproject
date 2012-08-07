@@ -1,5 +1,6 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
+from django.template.context import RequestContext
 from sensors.models import SensorReading
 
 from datetime import date, datetime, timedelta
@@ -35,4 +36,4 @@ def latest_detail(request):
     return render_to_response('sensors/one_reading.html', {
         'one_reading': latest_reading,
         'reading_context': last_hour_readings,
-    })
+    }, context_instance=RequestContext(request))
