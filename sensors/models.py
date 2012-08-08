@@ -1,6 +1,6 @@
 from django.db import models
 from datetime import datetime
-from dateutil.tz import tzlocal
+from dateutil.tz import tzlocal, tzutc
 import logging
 import time
 
@@ -13,6 +13,7 @@ class SensorLocation(models.Model):
         return self.location
 
 class SensorReading(models.Model):
+    # datetime_read is stored in the database as UTC
     datetime_read = models.DateTimeField('Date and Time of reading', db_index=True)
     temperature_celsius = models.DecimalField(max_digits=3, decimal_places=1)
     humidity_percent = models.DecimalField(max_digits=3, decimal_places=1)
@@ -23,12 +24,15 @@ class SensorReading(models.Model):
             (self.location, self.datetime_read, self.temperature_celsius, self.humidity_percent)
 
     def is_current(self):
-        delta = datetime.now(tz=tzlocal()) - self.datetime_read
+        delta = datetime.now(tz=tzutc()) - self.datetime_read
         logger.debug("Delta seconds = %s" % (delta.seconds,))
         return delta.seconds < 120
 
-    def datetime_read_as_seconds_since_epoch(self):
-        return time.mktime(self.datetime_read.astimezone(tzlocal()).timetuple())
+    def datetime_read_as_seconds_since_epoch_local_tz(self):
+        datetime_read_local_tz = self.datetime_read.astimezone(tzlocal())
+#        logger.debug("datetime_read in local tz: secs since epoch %s. time %s" % \
+#            (time.mktime(datetime_read_local_tz.timetuple()), datetime_read_local_tz))
+        return time.mktime(datetime_read_local_tz.timetuple())
 
     def compact_date(self):
         return self.datetime_read.astimezone(tzlocal()).strftime("%H.%M")

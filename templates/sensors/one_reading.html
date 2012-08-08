@@ -56,24 +56,24 @@ Humidity: {{  one_reading.humidity_percent }}<br>
             <td>{{ reading.datetime_read }}</td>
             <td>{{ reading.temperature_celsius }}</td>
             <td>{{ reading.humidity_percent }}</td>
-            <td>{{ reading.datetime_read_as_seconds_since_epoch }}</td>
+            <td>{{ reading.datetime_read_as_seconds_since_epoch_local_tz }}</td>
             <td>{{ reading.is_current }}</td>
         </tr>
     {%  endfor %}
     </table>
-<!-- TODO: Have these resources accessible through the Django server/project -->
-<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}/rickshaw.min.css">
-<script src="{{ STATIC_URL }}/vendor/d3.min.js"></script>
-<script src="{{ STATIC_URL }}/vendor/d3.layout.min.js"></script>
-<script src="{{ STATIC_URL }}/rickshaw.min.js"></script>
+
+<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}rickshaw.min.css">
+<script src="{{ STATIC_URL }}vendor/d3.min.js"></script>
+<script src="{{ STATIC_URL }}vendor/d3.layout.min.js"></script>
+<script src="{{ STATIC_URL }}rickshaw.min.js"></script>
 
 <script type="text/javascript">
 
 var temperature_data = [
-    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch }}, y: {{ reading.temperature_celsius }} },
+    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch_local_tz }}, y: {{ reading.temperature_celsius }} },
     {% endfor %}];
 var humidity_data = [
-    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch }}, y: {{ reading.temperature_celsius }} },
+    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch_local_tz }}, y: {{ reading.temperature_celsius }} },
     {% endfor %}];
 
 var palette = new Rickshaw.Color.Palette();
@@ -94,7 +94,6 @@ var graph = new Rickshaw.Graph( {
     }]
 });
 
-<!-- TODO: Times on the axis are shown in UTC, make them in local time -->
 var x_axis = new Rickshaw.Graph.Axis.Time( {
     graph: graph
 });
