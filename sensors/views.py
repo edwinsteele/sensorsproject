@@ -2,9 +2,14 @@ from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from django.template.context import RequestContext
 from sensors.models import SensorReading
+import logging
 
 from datetime import date, datetime, timedelta
-from dateutil.tz import tzlocal
+from dateutil.tz import tzutc
+
+logger = logging.getLogger(__name__)
+
+# TODO: Use class-based generic views (https://docs.djangoproject.com/en/dev/topics/class-based-views/generic-display/)
 
 def home(request):
     return HttpResponse("Hello, world. You're at the poll index.")
@@ -31,7 +36,8 @@ def latest_detail(request):
     # TODO: is this really the most efficient way to get the most recent reading?
     latest_reading = SensorReading.objects.all().order_by('-datetime_read')[:1][0]
     # Are there any cases where latest reading might not be included in last_hour_readings?
-    one_hour_ago = datetime.now(tz=tzlocal()) - timedelta(seconds=3600)
+    one_hour_ago = datetime.now(tz=tzutc()) - timedelta(seconds=3600)
+    logger.debug("One hour ago: %s" % (one_hour_ago,))
     last_hour_readings = SensorReading.objects.filter(datetime_read__gte=one_hour_ago)
     return render_to_response('sensors/one_reading.html', {
         'one_reading': latest_reading,
