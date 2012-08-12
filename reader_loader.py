@@ -11,6 +11,7 @@ import serial.tools.list_ports
 from datetime import datetime
 from dateutil.tz import tzlocal
 
+# TODO: Use logging module
 # TODO: Improve persistent logging in this script and associated modules to help with diagnosis of arduino probs
 def wait_until_the_next_minute():
     """
@@ -34,13 +35,21 @@ LEFT_MACBOOK_USB_PORT="/dev/tty.usbmodem621"
 
 usbmodem_devices = serial.tools.list_ports.grep(".*tty\.usbmodem[0-9]")
 
-if len(list(usbmodem_devices)) == 1:
-    possible_arduino = list(usbmodem_devices)[0]
-    print "Found a possible USB-connected Arduino boards on %s" % (possible_arduino,)
+usbmodem_list = list(usbmodem_devices)
+if len(usbmodem_list) == 1:
+    arduino_port_name, arduino_port_desc, arduino_port_hw = list(usbmodem_list)[0]
+    print "Found a possible USB-connected Arduino board on %s (%s) with hardware type %s" % \
+            (arduino_port_name, arduino_port_desc, arduino_port_hw)
     print "Assuming it's an Arduino. Connecting..."
-    arduino_serial = serial.Serial(possible_arduino, 38400)
+    arduino_serial = serial.Serial(arduino_port_name, 38400)
     #arduino_serial = serial.Serial('/dev/tty.usbmodem621', 38400)
     srp = SensorReadingProvider.SensorReadingProvider(arduino_serial)
+
+elif len(usbmodem_list) > 1:
+    # TODO: Clean up what we print and do here
+    print "More than one possible USB-connected Arduino boards. (%s) " % (usbmodem_list,)
+    print "Falling back to Simulated Sensor."
+    srp = SensorReadingProvider.SimulatedSensorReadingProvider(None)
 
 else:
     print "No USB-connected Arduino boards. Using Simulated Sensor."
