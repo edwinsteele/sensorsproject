@@ -6,6 +6,9 @@ import time
 
 logger = logging.getLogger(__name__)
 
+# TODO - make this generic, not just Sydney timezone
+seconds_from_UTC = 36000
+
 class SensorLocation(models.Model):
     location = models.CharField(max_length=40)
 
@@ -30,9 +33,11 @@ class SensorReading(models.Model):
 
     def datetime_read_as_seconds_since_epoch_local_tz(self):
         datetime_read_local_tz = self.datetime_read.astimezone(tzlocal())
-#        logger.debug("datetime_read in local tz: secs since epoch %s. time %s" % \
-#            (time.mktime(datetime_read_local_tz.timetuple()), datetime_read_local_tz))
-        return time.mktime(datetime_read_local_tz.timetuple())
+        logger.debug("datetime_read in local tz: secs since epoch %s. time %s" % \
+            (time.mktime(datetime_read_local_tz.timetuple()), datetime_read_local_tz))
+        # Rickshaw seems confused about whether something is in UTC or not, so we need to add
+        #  the number of seconds from UTC. Meh
+        return time.mktime(datetime_read_local_tz.timetuple()) + seconds_from_UTC
 
     def compact_date(self):
         return self.datetime_read.astimezone(tzlocal()).strftime("%H.%M")
