@@ -1,22 +1,53 @@
 import time
+import serial
 
 __author__ = 'esteele'
 
 import random, re, threading
 from decimal import Decimal
+import serial.tools.list_ports
 
-class SensorReadingProvider(threading.Thread):
+class BaseSensorReadingProvider(threading.Thread):
+    def __init__(self, serial_port):
+        threading.Thread.__init__(self)
+        self.last_humidity_reading = None
+        self.last_temperature_reading = None
+        self.last_diagnostic = None
+        # Kick off the recorder
+        self.start()
+
+    def _record_sensor_reading(self):
+        # implement in subclass
+        pass
+
+    def run(self):
+       while 1:
+           self._record_sensor_reading()
+
+    def initialise(self):
+        """
+        Give the sensor time to initialise and get to a point where it's producing a reliable stream of readings
+        """
+        while self.get_latest_temperature() is None or self.get_latest_humidity() is None:
+            print "Waiting for initialisation to complete: %s" % (self.last_diagnostic,)
+            print "Sleeping for 1s to give sensors time to make a valid reading"
+            time.sleep(1)
+
+    def get_latest_temperature(self):
+        return self.last_temperature_reading
+
+    def get_latest_humidity(self):
+        return self.last_humidity_reading
+
+
+class ArduinoSensorReadingProvider(BaseSensorReadingProvider):
     # 'Humidity: 62.80 %\tTemperature: 20.00 *C\r\n'
     humidity_temp_string_re = re.compile("Humidity: (?P<humidity_perc>[0-9]{1,2}\.[0-9]{2}).*Temperature: (?P<temp_celcius>[0-9]{1,2}\.[0-9]{2}).*$")
     initialisation_re = re.compile("^Initialising DHT Sensor.*")
 
     def __init__(self, serial_port):
-        threading.Thread.__init__(self)
-        self.last_humidity_reading = None
-        self.last_temperature_reading = None
         self.arduino_serial_port = serial_port
-        # Kick off the recorder
-        self.start()
+        BaseSensorReadingProvider.__init__(self, serial_port)
 
     def _record_sensor_reading(self):
         # Goes directly to the sensor and updates class variables
@@ -27,41 +58,31 @@ class SensorReadingProvider(threading.Thread):
         if reading_mo:
             humidity = reading_mo.group('humidity_perc')
             temperature = reading_mo.group('temp_celcius')
+            # Don't unset the last_diagnostic message when we have a successful reading so that we don't have
+            #  any race conditions when gathering readings and diags without locking
             #print "Matched. Humidity is %s and temp is %s" % (humidity, temperature)
         elif init_mo:
             humidity = temperature = None
-            print "Sensor initialisation complete."
+            self.last_diagnostic = "Sensor initialisation complete"
         else:
             humidity = temperature = None
             # TODO - fix this handling up a bit
-            print "No match for line->%s<-" % (line,)
+            self.last_diagnostic = "No match for line->%s<-" % (line.strip(),)
 
         self.last_humidity_reading = humidity
         self.last_temperature_reading = temperature
 
-    def is_available(self):
-        # TODO - move the initialisation and detection logic here... prob split the serial connected class
-        #  so that the simulated sensor doesn't inherit this behaviour
+    def has_valid_reading(self):
         pass
 
-    def run(self):
-       while 1:
-           self._record_sensor_reading()
 
-    def get_latest_temperature(self):
-        return self.last_temperature_reading
-
-    def get_latest_humidity(self):
-        return self.last_humidity_reading
-
-
-class SimulatedSensorReadingProvider(SensorReadingProvider):
+class SimulatedSensorReadingProvider(BaseSensorReadingProvider):
     INITIAL_TEMPERATURE_CELSIUS = Decimal("18.00")
     INITIAL_HUMIDITY_PERC = Decimal("85.00")
 
     def __init__(self, serial_port):
         self.srg = self._sensor_reading_generator(self.INITIAL_TEMPERATURE_CELSIUS, self.INITIAL_HUMIDITY_PERC)
-        SensorReadingProvider.__init__(self, serial_port)
+        BaseSensorReadingProvider.__init__(self, serial_port)
 
     def _sensor_reading_generator(self, t_celsius, h_percent):
         """
@@ -81,3 +102,33 @@ class SimulatedSensorReadingProvider(SensorReadingProvider):
         self.last_temperature_reading, self.last_humidity_reading = self.srg.next()
         time.sleep(0.25)
 
+
+class SensorReadingProviderFactory(object):
+    @staticmethod
+    def sensor_reading_provider_factory_method():
+        # On my macbook, these physical USB ports exist
+        RIGHT_MACBOOK_USB_PORT="/dev/tty.usbmodem411"
+        LEFT_MACBOOK_USB_PORT="/dev/tty.usbmodem621"
+
+        usbmodem_devices = serial.tools.list_ports.grep(".*tty\.usbmodem[0-9]")
+
+        usbmodem_list = list(usbmodem_devices)
+        if len(usbmodem_list) == 1:
+            arduino_port_name, arduino_port_desc, arduino_port_hw = list(usbmodem_list)[0]
+            print "Found a possible USB-connected Arduino board on %s (%s) with hardware type %s" %\
+                  (arduino_port_name, arduino_port_desc, arduino_port_hw)
+            print "Assuming it's an Arduino. Connecting..."
+            arduino_serial = serial.Serial(arduino_port_name, 38400)
+            srp = ArduinoSensorReadingProvider(arduino_serial)
+
+        elif len(usbmodem_list) > 1:
+            # TODO: Clean up what we print and do here
+            print "More than one possible USB-connected Arduino boards. (%s) " % (usbmodem_list,)
+            print "Falling back to Simulated Sensor."
+            srp = SimulatedSensorReadingProvider(None)
+
+        else:
+            print "No USB-connected Arduino boards. Using Simulated Sensor."
+            srp = SimulatedSensorReadingProvider(None)
+
+        return srp
