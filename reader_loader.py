@@ -37,8 +37,12 @@ while 1:
     latest_temperature_celsius = srp.get_latest_temperature()
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)
     # TODO: Avoid inserting reading when there's already one in the db for that sensor in the same minute
-    print "%s: Inserting reading... %s: %sc %s%%" % \
-          (datetime.now(tz=tzlocal()), current_datetime_no_secs, latest_temperature_celsius, latest_humidity_percent)
+    print "%s: Inserting reading... %s: %sc %s%% (count %s)" % \
+          (datetime.now(tz=tzlocal()),
+           current_datetime_no_secs,
+           latest_temperature_celsius,
+           latest_humidity_percent,
+            srp.get_reading_counter())
     SensorReading.objects.create(datetime_read=current_datetime_no_secs,
         temperature_celsius=latest_temperature_celsius,
         humidity_percent=latest_humidity_percent,
