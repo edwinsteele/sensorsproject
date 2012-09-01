@@ -1,13 +1,10 @@
 from django.conf.urls import patterns, url
-from sensors.views import CannedViewClass
+import sensors.views
 
 urlpatterns = patterns('sensors.views',
     url(r'^$', 'home', name='home'),
-    url(r'^latest$', 'latest_detail', name='latest'),
-    url(r'^recent$', 'recent_detail', name='recent'),
-    url(r'^canned$', CannedViewClass.as_view(), name='canned'),
-    url(r'^(?P<year>\d{4})/$', 'year_detail'),
-    url(r'^(?P<year>\d{4})/(?P<month>\d{2})/$', 'month_detail'),
-    url(r'^(?P<year>\d{4})/(?P<month>\d{2})/(?P<day>\d+)/$', 'day_detail'),
+    url(r'^latest$', sensors.views.LatestViewClass.as_view(), name='latest'),
+    url(r'^recent$', sensors.views.RecentViewClass.as_view(), name='recent'),
+    url(r'^canned$', sensors.views.CannedViewClass.as_view(), name='canned'),
 )
 
