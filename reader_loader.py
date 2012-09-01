@@ -4,7 +4,7 @@ sys.path.append("/Users/esteele/Code/sensorsproject")
 os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
 
 from sensors.models import SensorReading, SensorLocation
-import SensorReadingProvider
+import sensorreadingprovider
 
 
 from datetime import datetime
@@ -27,7 +27,7 @@ def wait_until_the_next_minute():
         time.sleep(60.0)
 
 lounge_room_sensor = SensorLocation.objects.get(pk=1)
-srp = SensorReadingProvider.SensorReadingProviderFactory.sensor_reading_provider_factory_method()
+srp = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method()
 srp.initialise()
 while 1:
     # TODO: Perhaps srp's should be generators, that way they can avoid sending a None reading when we've read an
