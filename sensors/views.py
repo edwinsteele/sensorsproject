@@ -1,6 +1,7 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from django.template.context import RequestContext
+from django.views.generic.base import TemplateView
 from sensors.models import SensorReading
 import logging
 
@@ -44,19 +45,17 @@ def recent_detail(request):
     twenty_four_hours_ago = datetime.now(tz=tzutc()) - timedelta(days=1)
     return generic_detail(request, twenty_four_hours_ago)
 
-def canned_detail(request):
-    # This is a full day of data and is useful for testing
-    most_recent_reading = SensorReading.objects.all().order_by('-datetime_read')[:1][0]
-    earliest_reading = datetime(2012, 8, 14, 0, 0, 1, tzinfo=tzlocal())
-    latest_reading = datetime(2012, 8, 14, 23, 59, 59, tzinfo=tzlocal())
-    recency_readings = SensorReading.objects.filter(datetime_read__gte=earliest_reading, datetime_read__lte=latest_reading)
-    return render_to_response('sensors/one_reading.html', {
-        'one_reading': most_recent_reading,
-        'reading_context': recency_readings,
-        }, context_instance=RequestContext(request))
-
-
-
 def latest_detail(request):
     one_hour_ago = datetime.now(tz=tzutc()) - timedelta(seconds=3600)
     return generic_detail(request, one_hour_ago)
+
+class CannedViewClass(TemplateView):
+    template_name = "sensors/one_reading.html"
+
+    def get(self, request, *args, **kwargs):
+        most_recent_reading = SensorReading.objects.all().order_by('-datetime_read')[:1][0]
+        earliest_reading = datetime(2012, 8, 14, 0, 0, 1, tzinfo=tzlocal())
+        latest_reading = datetime(2012, 8, 14, 23, 59, 59, tzinfo=tzlocal())
+        recency_readings = SensorReading.objects.filter(datetime_read__gte=earliest_reading, datetime_read__lte=latest_reading)
+        context = { 'one_reading': most_recent_reading, 'reading_context': recency_readings }
+        return self.render_to_response(context)
