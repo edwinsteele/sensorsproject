@@ -1,57 +1,60 @@
 {% extends "sensors/base.html" %}
 
 {% block title %}Sensors recent history{% endblock %}
-
 {% block content %}
+    <style>
+        #temperature_chart_container, #humidity_chart_container {
+            position: relative;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #temperature_chart, #humidity_chart {
+            position: relative;
+            left: 40px;
+        }
+        #temperature_y_axis, #humidity_y_axis {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+        }
+    </style>
+
+    <table border="1">
+        <tr><th>Temperature</th><th>Humidity</th></tr>
+
 {% if one_reading %}
-<!-- TODO: show trending and give some quick context -->
+    {# TODO show trending data e.g. up 3% in the last 5 minutes #}
     {%  if one_reading.is_current %}
-<h1>Current reading</h1>
+        <tr>
+            <td>Currently: {{ one_reading.temperature_celsius }}&deg;C [insert trend data]</td>
+            <td>Currently: {{ one_reading.humidity_percent }}% [insert trend data]</td>
+        </tr>
     {% else %}
-<h1>Most recent reading</h1>
-Time of reading: {{ one_reading.datetime_read }} ({{ one_reading.compact_date }})<br>
+        <tr>
+            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} [insert trend data]</td>
+            <td>{{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} [insert trend data]</td>
+        </tr>
     {% endif %}
-Temperature: {{ one_reading.temperature_celsius }}<br>
-Humidity: {{  one_reading.humidity_percent }}<br>
 {% else %}
     No reading available.<br>
 {% endif %}
 
-<style>
-    #temperature_chart_container, #humidity_chart_container {
-        position: relative;
-        font-family: Arial, Helvetica, sans-serif;
-    }
-    #temperature_chart, #humidity_chart {
-        position: relative;
-        left: 40px;
-    }
-    #temperature_y_axis, #humidity_y_axis {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 40px;
-    }
-</style>
+        {# TODO: Fix this mess. Use divs not tables, or make sure the insertion of the axis div doesn't cause overflow into the next cell #}
+        <tr><td>
+            <div id="temperature_chart_container">
+                <div id="temperature_y_axis"></div>
+                <div id="temperature_chart"></div>
+            </div>
+            </td>
+            <td>
+            <div id="humidity_chart_container">
+                <div id="humidity_y_axis"></div>
+                <div id="humidity_chart"></div>
+            </div>
+            </td>
+        </tr>
+    </table>
 
-<table>
-<tr><td>
-<div id="temperature_chart_container">
-    <div id="temperature_y_axis"></div>
-    <div id="temperature_chart"></div>
-</div>
-</td>
-<td>
-<div id="humidity_chart_container">
-    <div id="humidity_y_axis"></div>
-    <div id="humidity_chart"></div>
-</div>
-</td>
-</tr>
-</table>
-
-<!-- TODO: graph this -->
-<h1>Recent history</h1>
 {% if reading_context %}
 
 <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}rickshaw.min.css">
