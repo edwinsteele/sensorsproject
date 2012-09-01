@@ -24,7 +24,7 @@ class BaseSensorReadingProvider(threading.Thread):
         # implement in subclass
         pass
 
-    def run(self):
+    def run(self, *args, **kwargs):
        while 1:
             self._record_sensor_reading()
             self.reading_counter += 1

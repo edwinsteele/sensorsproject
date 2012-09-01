@@ -11,7 +11,7 @@ from datetime import datetime
 from dateutil.tz import tzlocal
 
 # TODO: Use logging module
-# TODO: Improve persistent logging in this script and associated modules to help with diagnosis of arduino probs
+# TODO: Improve persistent logging in this script and associated modules to help with diagnosis of arduino problems
 def wait_until_the_next_minute():
     """
     We only want to record reading times with one minute accuracy and we don't want to get two
