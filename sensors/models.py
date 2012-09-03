@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.tz import tzlocal, tzutc
 import logging
 import time
@@ -9,6 +9,56 @@ logger = logging.getLogger(__name__)
 # TODO - make this generic, not just Sydney timezone
 seconds_from_UTC = 36000
 
+class SensorReadingManager(models.Manager):
+    def most_recent_reading(self, earliest_reading_time, latest_reading_time):
+        """
+        The most recent reading may not always correspond to the latest_reading_time if there is a discontinuity
+        in the data
+        """
+        readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
+                datetime_read__lte=latest_reading_time)
+        if readings_in_period:
+            most_recent_reading = readings_in_period.order_by("-datetime_read")[:1][0]
+        else:
+            most_recent_reading = None
+
+        return most_recent_reading
+
+    def get_trend_data(self, earliest_reading_time, latest_reading_time):
+        """
+        Produces a tuple of three values that describe the trend of the data over a recent period. Trend periods:
+        < 23 hours of readings: 5 minutes
+        < 6d 23h of readings: 1 hour
+        > 6d 23h of readings: 1 day
+        We assume one reading per minute.
+
+        the tuple elements are:
+        1. timedelta object corresponding to the trend period
+        2. temperature delta (float) during the trend period
+        3. humidity delta (float) during the trend period
+
+        Initially we'll determine the trend by comparing the last reading with the reading at the start of the trend
+        period, but can probably do better than that.
+        """
+        readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
+                datetime_read__lte=latest_reading_time)
+        first_sensor_reading = readings_in_period[0]
+        latest_sensor_reading = readings_in_period[len(readings_in_period)-1]
+        length_of_period = latest_sensor_reading.datetime_read - first_sensor_reading.datetime_read
+        if length_of_period < timedelta(hours=23):
+            trend_duration = timedelta(minutes=5)
+        elif length_of_period < timedelta(days=6, hours=23):
+            trend_duration = timedelta(hours=1)
+        else:
+            trend_duration = timedelta(days=1)
+
+        trend_starting_point = latest_sensor_reading.datetime_read - trend_duration
+        trend_start_sensor_reading = readings_in_period.filter(datetime_read__gte=trend_starting_point)[:1][0]
+        temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
+        humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
+        return trend_duration, temperature_delta, humidity_delta
+
+
 class SensorLocation(models.Model):
     location = models.CharField(max_length=40)
 
@@ -16,6 +66,8 @@ class SensorLocation(models.Model):
         return self.location
 
 class SensorReading(models.Model):
+    objects = SensorReadingManager()
+
     # datetime_read is stored in the database as UTC
     datetime_read = models.DateTimeField('Date and Time of reading', db_index=True)
     temperature_celsius = models.DecimalField(max_digits=3, decimal_places=1)

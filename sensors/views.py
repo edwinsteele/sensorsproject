@@ -13,6 +13,7 @@ def home(request):
 
 class BaseSensorViewClass(TemplateView):
     template_name = "sensors/one_reading.html"
+    UNCHANGED_STR="Unchanged"
 
     def get_earliest_reading_time(self):
         # TODO - need a better default for this
@@ -21,56 +22,58 @@ class BaseSensorViewClass(TemplateView):
     def get_latest_reading_time(self):
         return datetime.now(tz=tzutc())
 
-    def get_trend_str(self, readings_in_period):
+    def pretty_duration(self, td):
+        if td == timedelta(days=1):
+            return "day"
+        elif td == timedelta(minutes=5):
+            return "5 minutes"
+        elif td == timedelta(hours=1):
+            return "hour"
+        else:
+            return "some period"
+
+    def pretty_trend(self, trend_float):
         """
-        Produces a tuple of strings that describe the trend of the data over a recent period. Trend periods:
-        < 23 hours of readings: 5 minutes
-        < 6d 23h of readings: 1 hour
-        > 6d 23h of readings: 1 day
-        We assume one reading per minute.
+        Human readable. Takes a float and rounds it up - people don't care about detail to that extent.
+        """
+        # TODO - this is actually a Decimal and not a float. Do appropriate rounding too.
+        if trend_float <= -0.5:
+            return "Down %s" % (trend_float,)
+        elif trend_float < 0.5:
+            return self.UNCHANGED_STR
+        elif trend_float >= 0.5:
+            return "Up %s" % (trend_float,)
 
-        Initially we'll determine the trend by comparing the last reading with the reading at the start of the trend
-        period, but can probably do better than that.
-
+    def get_trend_str(self, trend_duration, temperature_delta, humidity_delta):
+        """
         up 3.2 deg in the past hour
         down 5.3% in the past 5 minutes
         unchanged in the past 5 minutes
         """
-        #TODO - Move most of this logic to a manager class. Formatting only here, please.
-        READINGS_IN_6D_23H = 9999
-        READINGS_IN_23_HOURS = 60 * 23
-        READINGS_IN_1_HOUR = 60
-        first_sensor_reading = readings_in_period[0]
-        latest_sensor_reading = readings_in_period[len(readings_in_period)-1]
-        length_of_period = latest_sensor_reading.datetime_read - first_sensor_reading.datetime_read
-        if length_of_period < timedelta(hours=23):
-            trend_starting_point = latest_sensor_reading.datetime_read - timedelta(minutes=5)
-            trend_duration_str = "5 minutes"
-        elif length_of_period < timedelta(days=6, hours=23):
-            trend_starting_point = latest_sensor_reading.datetime_read - timedelta(hours=1)
-            trend_duration_str = "hour"
+        temperature_trend_str = self.pretty_trend(temperature_delta)
+        humidity_trend_str = self.pretty_trend(humidity_delta)
+        # We don't display units if it's unchanged
+        if temperature_trend_str == self.UNCHANGED_STR:
+            temperature_units = ""
         else:
-            trend_starting_point = latest_sensor_reading.datetime_read - timedelta(days=1)
-            trend_duration_str = "day"
+            temperature_units = "&deg;"
 
-        trend_start_sensor_reading = readings_in_period.filter(datetime_read__gte=trend_starting_point)[:1][0]
-        temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
-        humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
-        return "%s in the last %s" % (temperature_delta, trend_duration_str), \
-               "%s in the last %s" % (humidity_delta, trend_duration_str)
+        if humidity_trend_str == self.UNCHANGED_STR:
+            humidity_units = ""
+        else:
+            humidity_units = "%"
+
+        return "%s%s in the last %s" % (temperature_trend_str, temperature_units, self.pretty_duration(trend_duration)),\
+               "%s%s in the last %s" % (humidity_trend_str, humidity_units, self.pretty_duration(trend_duration))
+
 
     def get(self, request, *args, **kwargs):
-        earliest_reading = self.get_earliest_reading_time()
-        latest_reading = self.get_latest_reading_time()
-        readings_in_period = SensorReading.objects.filter(datetime_read__gte=earliest_reading, datetime_read__lte=latest_reading)
-        if readings_in_period:
-            most_recent_reading = readings_in_period.order_by("-datetime_read")[:1][0]
-            temperature_trend_str, humidity_trend_str = self.get_trend_str(readings_in_period)
-        else:
-            most_recent_reading = None
-            # Not used
-            temperature_trend_str = ""
-            humidity_trend_str = ""
+        earliest = self.get_earliest_reading_time()
+        latest = self.get_latest_reading_time()
+        most_recent_reading = SensorReading.objects.most_recent_reading(earliest, latest)
+        trend_duration, temperature_delta, humidity_delta = SensorReading.objects.get_trend_data(earliest, latest)
+        temperature_trend_str, humidity_trend_str = self.get_trend_str(trend_duration, temperature_delta, humidity_delta)
+        readings_in_period = SensorReading.objects.filter(datetime_read__gte=earliest, datetime_read__lte=latest)
         logger.debug("most recent reading = %s" % (most_recent_reading,))
         context = { "one_reading": most_recent_reading,
                     "reading_context": readings_in_period,

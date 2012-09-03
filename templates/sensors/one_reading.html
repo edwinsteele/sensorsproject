@@ -30,7 +30,7 @@
         </tr>
     {% else %}
         <tr>
-            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} ({{ temperature_trend_str }})</td>
+            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} ({{ temperature_trend_str|safe }})</td>
             <td>{{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} ({{ humidity_trend_str }})</td>
         </tr>
     {% endif %}
