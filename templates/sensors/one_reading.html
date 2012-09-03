@@ -23,16 +23,15 @@
         <tr><th>Temperature</th><th>Humidity</th></tr>
 
 {% if one_reading %}
-    {# TODO show trending data e.g. up 3% in the last 5 minutes #}
     {%  if one_reading.is_current %}
         <tr>
-            <td>Currently: {{ one_reading.temperature_celsius }}&deg;C [insert trend data]</td>
-            <td>Currently: {{ one_reading.humidity_percent }}% [insert trend data]</td>
+            <td>Currently: {{ one_reading.temperature_celsius }}&deg;C ({{ temperature_trend_str }})</td>
+            <td>Currently: {{ one_reading.humidity_percent }}% ({{ humidity_trend_str }})</td>
         </tr>
     {% else %}
         <tr>
-            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} [insert trend data]</td>
-            <td>{{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} [insert trend data]</td>
+            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} ({{ temperature_trend_str }})</td>
+            <td>{{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} ({{ humidity_trend_str }})</td>
         </tr>
     {% endif %}
 {% else %}

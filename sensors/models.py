@@ -28,13 +28,12 @@ class SensorReading(models.Model):
 
     def is_current(self):
         delta = datetime.now(tz=tzutc()) - self.datetime_read
-        logger.debug("Delta seconds = %s" % (delta.seconds,))
         return delta.seconds < 120
 
     def datetime_read_as_seconds_since_epoch_local_tz(self):
         datetime_read_local_tz = self.datetime_read.astimezone(tzlocal())
-        logger.debug("datetime_read in local tz: secs since epoch %s. time %s" % \
-            (time.mktime(datetime_read_local_tz.timetuple()), datetime_read_local_tz))
+        #logger.debug("datetime_read in local tz: secs since epoch %s. time %s" % \
+        #     (time.mktime(datetime_read_local_tz.timetuple()), datetime_read_local_tz))
         # Rickshaw seems confused about whether something is in UTC or not, so we need to add
         #  the number of seconds from UTC. Meh
         return time.mktime(datetime_read_local_tz.timetuple()) + seconds_from_UTC
