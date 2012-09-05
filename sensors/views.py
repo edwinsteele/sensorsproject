@@ -16,7 +16,6 @@ class BaseSensorViewClass(TemplateView):
     UNCHANGED_STR="Unchanged"
 
     def get_earliest_reading_time(self):
-        # TODO - need a better default for this
         pass
 
     def get_latest_reading_time(self):
@@ -32,17 +31,16 @@ class BaseSensorViewClass(TemplateView):
         else:
             return "some period"
 
-    def pretty_trend(self, trend_float):
+    def pretty_trend(self, trend_decimal):
         """
         Human readable. Takes a float and rounds it up - people don't care about detail to that extent.
         """
-        # TODO - this is actually a Decimal and not a float. Do appropriate rounding too.
-        if trend_float <= -0.5:
-            return "Down %s" % (trend_float,)
-        elif trend_float < 0.5:
+        if trend_decimal <= -0.5:
+            return "Down %s" % (abs(trend_decimal.to_integral_value()),)
+        elif trend_decimal < 0.5:
             return self.UNCHANGED_STR
-        elif trend_float >= 0.5:
-            return "Up %s" % (trend_float,)
+        elif trend_decimal >= 0.5:
+            return "Up %s" % (trend_decimal.to_integral_value(),)
 
     def get_trend_str(self, trend_duration, temperature_delta, humidity_delta):
         """
