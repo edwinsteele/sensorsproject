@@ -38,7 +38,7 @@
     No reading available.<br>
 {% endif %}
 
-        {# TODO: Fix this mess. Use divs not tables, or make sure the insertion of the axis div doesn't cause overflow into the next cell #}
+        <!-- TODO: Fix this mess. Use divs not tables, or make sure the insertion of the axis div doesn't cause overflow into the next cell -->
         <tr><td>
             <div id="temperature_chart_container">
                 <div id="temperature_y_axis"></div>
@@ -56,10 +56,10 @@
 
 {% if reading_context %}
 
-<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}rickshaw.min.css">
-<script src="{{ STATIC_URL }}vendor/d3.min.js"></script>
-<script src="{{ STATIC_URL }}vendor/d3.layout.min.js"></script>
-<script src="{{ STATIC_URL }}rickshaw.min.js"></script>
+<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}css/rickshaw.min.css">
+<script src="{{ STATIC_URL }}js/d3.min.js"></script>
+<script src="{{ STATIC_URL }}js/d3.layout.min.js"></script>
+<script src="{{ STATIC_URL }}js/rickshaw.min.js"></script>
 
 <script type="text/javascript">
 
