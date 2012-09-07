@@ -2,25 +2,8 @@
 
 {% block title %}Sensors recent history{% endblock %}
 {% block content %}
-    <style>
-        #temperature_chart_container, #humidity_chart_container {
-            position: relative;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        #temperature_chart, #humidity_chart {
-            position: relative;
-            left: 40px;
-        }
-        #temperature_y_axis, #humidity_y_axis {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 40px;
-        }
-    </style>
-
     <div class="row">
-        <div class="span6">
+        <div class="span12">
             <!-- Temperature -->
             {% if one_reading %}
                 {%  if one_reading.is_current %}
@@ -31,13 +14,6 @@
             {% else %}
                 No reading available.<br>
             {% endif %}
-            <div id="temperature_chart_container">
-                <div id="temperature_y_axis"></div>
-                <div id="temperature_chart"></div>
-            </div>
-        </div>
-
-        <div class="span6">
             <!-- Humidity -->
             {% if one_reading %}
                 {%  if one_reading.is_current %}
@@ -48,78 +24,110 @@
             {% else %}
                 No reading available.<br>
             {% endif %}
-            <div id="humidity_chart_container">
-                <div id="humidity_y_axis"></div>
-                <div id="humidity_chart"></div>
+            <div id="tchart_container" style="min-width: 400px; height: 400px; margin: 0 auto">
             </div>
         </div>
     </div>
 
 {% if reading_context %}
 
-
-<script src="{{ STATIC_URL }}js/d3.min.js"></script>
-<script src="{{ STATIC_URL }}js/d3.layout.min.js"></script>
-<script src="{{ STATIC_URL }}js/rickshaw.min.js"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js"></script>
 
 <script type="text/javascript">
 
 var temperature_data = [
-    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch_local_tz }}, y: {{ reading.temperature_celsius }} },
+    {% for reading in reading_context %}{{ reading.temperature_celsius }},
     {% endfor %}];
 var humidity_data = [
-    {% for reading in reading_context %}{ x: {{ reading.datetime_read_as_seconds_since_epoch_local_tz }}, y: {{ reading.humidity_percent }} },
+    {% for reading in reading_context %}{{ reading.humidity_percent }},
+    {% endfor %}];
+var categories = [
+    {% for reading in reading_context %}'{{ reading.datetime_read_as_seconds_since_epoch_local_tz }}',
     {% endfor %}];
 
-var palette = new Rickshaw.Color.Palette();
+$(function () {
+    var chart;
+    $(document).ready(function() {
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: 'tchart_container',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Temperature and Humidity',
+                x: -20 //center
+            },
+            subtitle: {
+                text: 'Source: WorldClimate.com',
+                x: -20
+            },
+            xAxis: {
+                categories: categories
+            },
+            yAxis: [{ // Primary yAxis
+                labels: {
+                    formatter: function() {
+                        return this.value +'°C';
+                    },
+                    style: {
+                        color: '#89A54E'
+                    }
+                },
+                title: {
+                    text: 'Temperature',
+                    style: {
+                        color: '#89A54E'
+                    }
+                }
+            }, { // Secondary yAxis
+                title: {
+                    text: 'Humidity',
+                    style: {
+                        color: '#4572A7'
+                    }
+                },
+                labels: {
+                    formatter: function() {
+                        return this.value +'%';
+                    },
+                    style: {
+                        color: '#4572A7'
+                    }
+                },
+                opposite: true
+            }],
+            tooltip: {
+                formatter: function() {
+                    return ''+
+                            this.x +': '+ this.y +
+                            (this.series.name == 'Humidity' ? '%' : '°C');
+                }
+            },
+            legend: {
+                layout: 'vertical',
+                align: 'left',
+                x: 120,
+                verticalAlign: 'top',
+                y: 100,
+                floating: true,
+                backgroundColor: '#FFFFFF'
+            },
+            series: [{
+                name: 'Humidity',
+                color: '#4572A7',
+                type: 'column',
+                yAxis: 1,
+                data: humidity_data
+            }, {
+                name: 'Temperature',
+                color: '#89A54E',
+                type: 'spline',
+                data: temperature_data
+            }]
+        });
+    });
 
-var temperature_graph = new Rickshaw.Graph( {
-    element: document.querySelector("#temperature_chart"),
-    width: 400,
-    height: 200,
-    renderer: 'line',
-    series: [{
-        name: "Temperature",
-        data: temperature_data,
-        color: palette.color()
-    }]
 });
-
-var temperature_x_axis = new Rickshaw.Graph.Axis.Time( {
-    graph: temperature_graph
-});
-
-var temperature_y_axis = new Rickshaw.Graph.Axis.Y( {
-    graph: temperature_graph,
-    orientation: 'left',
-    element: document.getElementById('temperature_y_axis')
-} );
-
-temperature_graph.render();
-
-var humidity_graph = new Rickshaw.Graph( {
-    element: document.querySelector("#humidity_chart"),
-    width: 400,
-    height: 200,
-    renderer: 'line',
-    series: [{
-        name: "Humidity",
-        data: humidity_data,
-        color: palette.color()
-    }]
-});
-var humidity_x_axis = new Rickshaw.Graph.Axis.Time( {
-    graph: humidity_graph
-});
-
-var humidity_y_axis = new Rickshaw.Graph.Axis.Y( {
-    graph: humidity_graph,
-    orientation: 'left',
-    element: document.getElementById('humidity_y_axis')
-} );
-
-humidity_graph.render();
 
 </script>
 
