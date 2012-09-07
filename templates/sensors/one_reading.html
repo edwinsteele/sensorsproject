@@ -19,40 +19,41 @@
         }
     </style>
 
-    <table border="1">
-        <tr><th>Temperature</th><th>Humidity</th></tr>
-
-{% if one_reading %}
-    {%  if one_reading.is_current %}
-        <tr>
-            <td>Currently: {{ one_reading.temperature_celsius }}&deg;C ({{ temperature_trend_str }})</td>
-            <td>Currently: {{ one_reading.humidity_percent }}% ({{ humidity_trend_str }})</td>
-        </tr>
-    {% else %}
-        <tr>
-            <td>{{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} ({{ temperature_trend_str|safe }})</td>
-            <td>{{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} ({{ humidity_trend_str }})</td>
-        </tr>
-    {% endif %}
-{% else %}
-    No reading available.<br>
-{% endif %}
-
-        <!-- TODO: Fix this mess. Use divs not tables, or make sure the insertion of the axis div doesn't cause overflow into the next cell -->
-        <tr><td>
+    <div class="row">
+        <div class="span6">
+            <!-- Temperature -->
+            {% if one_reading %}
+                {%  if one_reading.is_current %}
+                    Currently: {{ one_reading.temperature_celsius }}&deg;C ({{ temperature_trend_str }})
+                {% else %}
+                    {{ one_reading.temperature_celsius }}&deg;C at {{ one_reading.compact_date }} ({{ temperature_trend_str|safe }})
+                {% endif %}
+            {% else %}
+                No reading available.<br>
+            {% endif %}
             <div id="temperature_chart_container">
                 <div id="temperature_y_axis"></div>
                 <div id="temperature_chart"></div>
             </div>
-            </td>
-            <td>
+        </div>
+
+        <div class="span6">
+            <!-- Humidity -->
+            {% if one_reading %}
+                {%  if one_reading.is_current %}
+                    Currently: {{ one_reading.humidity_percent }}% ({{ humidity_trend_str }})
+                {% else %}
+                    {{ one_reading.humidity_percent }}% at {{ one_reading.compact_date }} ({{ humidity_trend_str }})
+                {% endif %}
+            {% else %}
+                No reading available.<br>
+            {% endif %}
             <div id="humidity_chart_container">
                 <div id="humidity_y_axis"></div>
                 <div id="humidity_chart"></div>
             </div>
-            </td>
-        </tr>
-    </table>
+        </div>
+    </div>
 
 {% if reading_context %}
 
@@ -60,6 +61,7 @@
 <script src="{{ STATIC_URL }}js/d3.min.js"></script>
 <script src="{{ STATIC_URL }}js/d3.layout.min.js"></script>
 <script src="{{ STATIC_URL }}js/rickshaw.min.js"></script>
+<script src="{{ STATIC_URL }}js/highcharts.js"></script>
 
 <script type="text/javascript">
 
