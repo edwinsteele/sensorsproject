@@ -35,14 +35,13 @@
 
 <script type="text/javascript">
 
+// TODO: See whether we can cut down the number of points rendered, possibly by taking advantage of reloading data on zoom
+// See: http://highslide.com/forum/viewtopic.php?f=9&t=5528#p51164
 var temperature_data = [
     {% for reading in reading_context %}{{ reading.temperature_celsius }},
     {% endfor %}];
 var humidity_data = [
     {% for reading in reading_context %}{{ reading.humidity_percent }},
-    {% endfor %}];
-var categories = [
-    {% for reading in reading_context %}'{{ reading.datetime_read_as_seconds_since_epoch_local_tz }}',
     {% endfor %}];
 
 $(function () {
@@ -51,57 +50,60 @@ $(function () {
         chart = new Highcharts.Chart({
             chart: {
                 renderTo: 'tchart_container',
-                zoomType: 'xy'
+                zoomType: 'x'
             },
             title: {
                 text: 'Temperature and Humidity',
                 x: -20 //center
             },
             subtitle: {
-                text: 'Source: WorldClimate.com',
+                text: 'Source: insert sensor desc here',
                 x: -20
             },
             xAxis: {
-                categories: categories
+                type: 'datetime',
+                title: {
+                    text: null
+                }
             },
-            yAxis: [{ // Primary yAxis
-                labels: {
-                    formatter: function() {
-                        return this.value +'°C';
+            yAxis: [
+                { // Primary yAxis
+                    labels: {
+                        formatter: function() {
+                            return this.value +'°C';
+                        },
+                        style: {
+                            color: '#89A54E'
+                        }
                     },
-                    style: {
-                        color: '#89A54E'
+                    title: {
+                        text: 'Temperature',
+                        style: {
+                            color: '#89A54E'
+                        }
                     }
                 },
-                title: {
-                    text: 'Temperature',
-                    style: {
-                        color: '#89A54E'
-                    }
+                { // Secondary yAxis
+                    min: 0,
+                    title: {
+                        text: 'Humidity',
+                        style: {
+                            color: '#4572A7'
+                        }
+                    },
+                    labels: {
+                        formatter: function() {
+                            return this.value +'%';
+                        },
+                        style: {
+                            color: '#4572A7'
+                        }
+                    },
+                    opposite: true
                 }
-            }, { // Secondary yAxis
-                title: {
-                    text: 'Humidity',
-                    style: {
-                        color: '#4572A7'
-                    }
-                },
-                labels: {
-                    formatter: function() {
-                        return this.value +'%';
-                    },
-                    style: {
-                        color: '#4572A7'
-                    }
-                },
-                opposite: true
-            }],
+            ],
             tooltip: {
-                formatter: function() {
-                    return ''+
-                            this.x +': '+ this.y +
-                            (this.series.name == 'Humidity' ? '%' : '°C');
-                }
+                shared: true
             },
             legend: {
                 layout: 'vertical',
@@ -112,17 +114,51 @@ $(function () {
                 floating: true,
                 backgroundColor: '#FFFFFF'
             },
+            plotOptions: {
+                spline: {
+                    lineWidth: 1,
+                    marker: {
+                        enabled: false,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                radius: 5
+                            }
+                        }
+                    },
+                    shadow: false,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    }
+                }
+            },
             series: [{
                 name: 'Humidity',
                 color: '#4572A7',
-                type: 'column',
-                yAxis: 1,
-                data: humidity_data
+                data: humidity_data,
+                pointInterval: 60 * 1000, // one minute
+                // month start is 0 i.e. august is 7, instead of 8 (which is the python datetime repr)
+                // TODO: provide this as a value from Django
+                pointStart: Date.UTC(2012, 7, 14, 0, 0, 1),
+                tooltip: {
+                    valueSuffix: '%'
+                },
+                type: 'spline',
+                yAxis: 1
             }, {
                 name: 'Temperature',
                 color: '#89A54E',
-                type: 'spline',
-                data: temperature_data
+                data: temperature_data,
+                pointInterval: 60 * 1000, // one minute
+                // month start is 0 i.e. august is 7, instead of 8 (which is the python datetime repr)
+                // TODO: provide this as a value from Django
+                pointStart: Date.UTC(2012, 7, 14, 0, 0, 1),
+                tooltip: {
+                    valueSuffix: '°C'
+                },
+                type: 'spline'
             }]
         });
     });
