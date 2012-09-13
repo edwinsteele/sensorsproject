@@ -72,7 +72,6 @@ class BaseSensorViewClass(TemplateView):
         trend_duration, temperature_delta, humidity_delta = SensorReading.objects.get_trend_data(earliest, latest)
         temperature_trend_str, humidity_trend_str = self.get_trend_str(trend_duration, temperature_delta, humidity_delta)
         readings_in_period = SensorReading.objects.filter(datetime_read__gte=earliest, datetime_read__lte=latest)
-        logger.debug("most recent reading = %s" % (most_recent_reading,))
         context = { "one_reading": most_recent_reading,
                     "reading_context": readings_in_period,
                     "temperature_trend_str": temperature_trend_str,

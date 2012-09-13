@@ -10,15 +10,16 @@ logger = logging.getLogger(__name__)
 seconds_from_UTC = 36000
 
 class SensorReadingManager(models.Manager):
+    # FIXME - don't forget to factor in the sensor_id!! when doing queries
     def most_recent_reading(self, earliest_reading_time, latest_reading_time):
         """
         The most recent reading may not always correspond to the latest_reading_time if there is a discontinuity
         in the data
         """
         readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
-                datetime_read__lte=latest_reading_time)
+                datetime_read__lte=latest_reading_time).order_by("-datetime_read")
         if readings_in_period:
-            most_recent_reading = readings_in_period.order_by("-datetime_read")[:1][0]
+            most_recent_reading = readings_in_period[:1][0]
         else:
             most_recent_reading = None
 
@@ -42,8 +43,11 @@ class SensorReadingManager(models.Manager):
         """
         readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
                 datetime_read__lte=latest_reading_time)
-        first_sensor_reading = readings_in_period[0]
+        # Get the latest sensor reading first because it fully evaluates the query set, which means the first_sensor_reading
+        #  can be served from the cache. If the order is reversed, the slicing places a limit 1 on the query which
+        #  means that that the latest_sensor_reading cannot be served from cache
         latest_sensor_reading = readings_in_period[len(readings_in_period)-1]
+        first_sensor_reading = readings_in_period[0]
         length_of_period = latest_sensor_reading.datetime_read - first_sensor_reading.datetime_read
         if length_of_period < timedelta(hours=23):
             trend_duration = timedelta(minutes=5)
@@ -53,7 +57,15 @@ class SensorReadingManager(models.Manager):
             trend_duration = timedelta(days=1)
 
         trend_starting_point = latest_sensor_reading.datetime_read - trend_duration
-        trend_start_sensor_reading = readings_in_period.filter(datetime_read__gte=trend_starting_point)[:1][0]
+        # Could we reverse the query set here to save the
+        for reading in readings_in_period:
+            # force it to be created
+            if reading.datetime_read > trend_starting_point:
+                trend_start_sensor_reading = reading
+                break
+        else:
+            # FIXME... BOOM!
+            trend_starting_sensor_reading = None
         temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
         humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
         return trend_duration, temperature_delta, humidity_delta
