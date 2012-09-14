@@ -64,6 +64,17 @@ class BaseSensorViewClass(TemplateView):
         return "%s%s in the last %s" % (temperature_trend_str, temperature_units, self.pretty_duration(trend_duration)),\
                "%s%s in the last %s" % (humidity_trend_str, humidity_units, self.pretty_duration(trend_duration))
 
+    def point_start_string(self):
+        """
+        Used by highcharts to indicate where to start plotting the data.
+        Of the format Date.UTC(YYYY, M, D, h, m, s)
+
+        It's important to note that the month indexing starts at 0 so august is 7, instead of 8 (which is the
+        python datetime repr)
+        pointStart: Date.UTC(2012, 7, 14, 0, 0, 1),
+        """
+        ert = self.get_earliest_reading_time()
+        return "Date.UTC(%s, %s, %s, %s, %s, %s)" % (ert.year, ert.month - 1, ert.day, ert.hour, ert.minute, ert.second)
 
     def get(self, request, *args, **kwargs):
         earliest = self.get_earliest_reading_time()
@@ -75,7 +86,8 @@ class BaseSensorViewClass(TemplateView):
         context = { "one_reading": most_recent_reading,
                     "reading_context": readings_in_period,
                     "temperature_trend_str": temperature_trend_str,
-                    "humidity_trend_str": humidity_trend_str,}
+                    "humidity_trend_str": humidity_trend_str,
+                    "point_start_str": self.point_start_string()}
         return self.render_to_response(context)
 
 class RecentViewClass(BaseSensorViewClass):

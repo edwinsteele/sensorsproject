@@ -139,9 +139,7 @@ $(function () {
                 color: '#4572A7',
                 data: humidity_data,
                 pointInterval: 60 * 1000, // one minute
-                // month start is 0 i.e. august is 7, instead of 8 (which is the python datetime repr)
-                // TODO: provide this as a value from Django
-                pointStart: Date.UTC(2012, 7, 14, 0, 0, 1),
+                pointStart: {{ point_start_str }},
                 tooltip: {
                     valueSuffix: '%'
                 },
@@ -152,9 +150,7 @@ $(function () {
                 color: '#89A54E',
                 data: temperature_data,
                 pointInterval: 60 * 1000, // one minute
-                // month start is 0 i.e. august is 7, instead of 8 (which is the python datetime repr)
-                // TODO: provide this as a value from Django
-                pointStart: Date.UTC(2012, 7, 14, 0, 0, 1),
+                pointStart: {{ point_start_str }},
                 tooltip: {
                     valueSuffix: '°C'
                 },
