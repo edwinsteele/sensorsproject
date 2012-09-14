@@ -6,8 +6,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SensorReadingManager(models.Manager):
-    # FIXME - don't forget to factor in the sensor_id!! when doing queries
-    def get_trend_data(self, readings_in_period, earliest_reading_time, latest_reading_time):
+    # TODO - factor in the sensor_id!! when doing queries
+    def get_trend_data(self, readings_in_period):
         """
         Produces a tuple of three values that describe the trend of the data over a recent period. Trend periods:
         < 23 hours of readings: 5 minutes
@@ -23,6 +23,8 @@ class SensorReadingManager(models.Manager):
         Initially we'll determine the trend by comparing the last reading with the reading at the start of the trend
         period, but can probably do better than that.
         """
+        # TODO: Work out whether we want to infer the earliest reading time and latest reading time from the readings
+        #  in the database, or whether they should come from the parameters that are available in the calling function.
         # Get the latest sensor reading first because it fully evaluates the query set, which means the first_sensor_reading
         #  can be served from the cache. If the order is reversed, the slicing places a limit 1 on the query which
         #  means that that the latest_sensor_reading cannot be served from cache
@@ -42,7 +44,7 @@ class SensorReadingManager(models.Manager):
                 trend_start_sensor_reading = reading
                 break
         else:
-            # FIXME... BOOM!
+            # FIXME ... BOOM!
             trend_start_sensor_reading = None
         temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
         humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
