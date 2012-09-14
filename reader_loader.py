@@ -1,4 +1,6 @@
-import os, sys, time
+import logging, os, sys, time
+from datetime import datetime
+from dateutil.tz import tzlocal
 
 sys.path.append("/Users/esteele/Code/sensorsproject")
 os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
@@ -6,11 +8,8 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
 from sensors.models import SensorReading, SensorLocation
 import sensorreadingprovider
 
+logger = logging.getLogger("sensorsproject.reader_loader")
 
-from datetime import datetime
-from dateutil.tz import tzlocal
-
-# TODO: Use logging module
 # TODO: Improve persistent logging in this script and associated modules to help with diagnosis of arduino problems
 def wait_until_the_next_minute():
     """
@@ -37,12 +36,12 @@ while 1:
     latest_temperature_celsius = srp.get_latest_temperature()
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)
     # TODO: Avoid inserting reading when there's already one in the db for that sensor in the same minute
-    print "%s: Inserting reading... %s: %sc %s%% (count %s)" % \
+    logger.debug("%s: Inserting reading... %s: %sc %s%% (count %s)" % \
           (datetime.now(tz=tzlocal()),
            current_datetime_no_secs,
            latest_temperature_celsius,
            latest_humidity_percent,
-            srp.get_reading_counter())
+            srp.get_reading_counter()))
     SensorReading.objects.create(datetime_read=current_datetime_no_secs,
         temperature_celsius=latest_temperature_celsius,
         humidity_percent=latest_humidity_percent,

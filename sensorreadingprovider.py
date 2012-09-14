@@ -1,11 +1,11 @@
-import time
+import logging, random, re, threading, time
+from decimal import Decimal
 import serial
+import serial.tools.list_ports
+
+logger = logging.getLogger("sensorsproject.sensorreadingprovider")
 
 __author__ = 'esteele'
-
-import random, re, threading
-from decimal import Decimal
-import serial.tools.list_ports
 
 INITIALISING_STR="Initialising."
 
@@ -34,8 +34,8 @@ class BaseSensorReadingProvider(threading.Thread):
         Give the sensor time to initialise and get to a point where it's producing a reliable stream of readings
         """
         while self.get_latest_temperature() is None or self.get_latest_humidity() is None:
-            print "Waiting for initialisation to complete: %s" % (self.last_diagnostic,)
-            print "Sleeping for 1s to give sensors time to make a valid reading"
+            logger.info("Waiting for initialisation to complete: %s" % (self.last_diagnostic,))
+            logger.info("Sleeping for 1s to give sensors time to make a valid reading")
             time.sleep(1)
 
     def get_latest_temperature(self):
@@ -45,7 +45,7 @@ class BaseSensorReadingProvider(threading.Thread):
         else:
             # No need to print error on init
             if self.last_diagnostic != INITIALISING_STR:
-                print "Error: Temperature is None. Diag: %s" % (self.last_diagnostic,)
+                logger.error("Error: Temperature is None. Diag: %s" % (self.last_diagnostic,))
 
     def get_latest_humidity(self):
         # It can legitimately be 0, so check it's not None
@@ -54,7 +54,7 @@ class BaseSensorReadingProvider(threading.Thread):
         else:
             # No need to print error during init
             if self.last_diagnostic != INITIALISING_STR:
-                print "Error: Humidity is None. Diag: %s" % (self.last_diagnostic,)
+                logger.error("Error: Humidity is None. Diag: %s" % (self.last_diagnostic,))
 
     def get_reading_counter(self):
         return self.reading_counter
