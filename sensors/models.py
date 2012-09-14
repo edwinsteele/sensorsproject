@@ -11,21 +11,7 @@ seconds_from_UTC = 36000
 
 class SensorReadingManager(models.Manager):
     # FIXME - don't forget to factor in the sensor_id!! when doing queries
-    def most_recent_reading(self, earliest_reading_time, latest_reading_time):
-        """
-        The most recent reading may not always correspond to the latest_reading_time if there is a discontinuity
-        in the data
-        """
-        readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
-                datetime_read__lte=latest_reading_time).order_by("-datetime_read")
-        if readings_in_period:
-            most_recent_reading = readings_in_period[:1][0]
-        else:
-            most_recent_reading = None
-
-        return most_recent_reading
-
-    def get_trend_data(self, earliest_reading_time, latest_reading_time):
+    def get_trend_data(self, readings_in_period, earliest_reading_time, latest_reading_time):
         """
         Produces a tuple of three values that describe the trend of the data over a recent period. Trend periods:
         < 23 hours of readings: 5 minutes
@@ -41,8 +27,8 @@ class SensorReadingManager(models.Manager):
         Initially we'll determine the trend by comparing the last reading with the reading at the start of the trend
         period, but can probably do better than that.
         """
-        readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
-                datetime_read__lte=latest_reading_time)
+        #readings_in_period = self.get_query_set().filter(datetime_read__gte=earliest_reading_time,
+        #        datetime_read__lte=latest_reading_time)
         # Get the latest sensor reading first because it fully evaluates the query set, which means the first_sensor_reading
         #  can be served from the cache. If the order is reversed, the slicing places a limit 1 on the query which
         #  means that that the latest_sensor_reading cannot be served from cache
@@ -65,7 +51,7 @@ class SensorReadingManager(models.Manager):
                 break
         else:
             # FIXME... BOOM!
-            trend_starting_sensor_reading = None
+            trend_start_sensor_reading = None
         temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
         humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
         return trend_duration, temperature_delta, humidity_delta
@@ -79,6 +65,10 @@ class SensorLocation(models.Model):
 
 class SensorReading(models.Model):
     objects = SensorReadingManager()
+
+    class Meta:
+        ordering = ["datetime_read"]
+
 
     # datetime_read is stored in the database as UTC
     datetime_read = models.DateTimeField('Date and Time of reading', db_index=True)

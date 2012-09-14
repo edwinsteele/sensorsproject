@@ -68,10 +68,10 @@ class BaseSensorViewClass(TemplateView):
     def get(self, request, *args, **kwargs):
         earliest = self.get_earliest_reading_time()
         latest = self.get_latest_reading_time()
-        most_recent_reading = SensorReading.objects.most_recent_reading(earliest, latest)
-        trend_duration, temperature_delta, humidity_delta = SensorReading.objects.get_trend_data(earliest, latest)
-        temperature_trend_str, humidity_trend_str = self.get_trend_str(trend_duration, temperature_delta, humidity_delta)
         readings_in_period = SensorReading.objects.filter(datetime_read__gte=earliest, datetime_read__lte=latest)
+        trend_duration, temperature_delta, humidity_delta = SensorReading.objects.get_trend_data(readings_in_period, earliest, latest)
+        temperature_trend_str, humidity_trend_str = self.get_trend_str(trend_duration, temperature_delta, humidity_delta)
+        most_recent_reading = readings_in_period[len(readings_in_period)-1]
         context = { "one_reading": most_recent_reading,
                     "reading_context": readings_in_period,
                     "temperature_trend_str": temperature_trend_str,
@@ -91,7 +91,7 @@ class LatestViewClass(BaseSensorViewClass):
 
 class CannedViewClass(BaseSensorViewClass):
     def get_earliest_reading_time(self):
-        return datetime(2012, 8, 14, 0, 0, 1, tzinfo=tzlocal())
+        return datetime(2012, 8, 14, 0, 0, 0, tzinfo=tzlocal())
 
     def get_latest_reading_time(self):
         return datetime(2012, 8, 14, 23, 59, 59, tzinfo=tzlocal())
