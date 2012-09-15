@@ -5,10 +5,11 @@ from dateutil.tz import tzlocal
 sys.path.append("/Users/esteele/Code/sensorsproject")
 os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
 
-from sensors.models import SensorReading, SensorLocation
-import sensorreadingprovider
+import sensorreadingprovider, sensorreadingtransport
 
 logger = logging.getLogger("sensorsproject.reader_loader")
+
+LOUNGE_ROOM_SENSOR_ID=1
 
 # TODO: Improve persistent logging in this script and associated modules to help with diagnosis of arduino problems
 def wait_until_the_next_minute():
@@ -25,8 +26,11 @@ def wait_until_the_next_minute():
     else:
         time.sleep(60.0)
 
-lounge_room_sensor = SensorLocation.objects.get(pk=1)
-srp = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method()
+#receiver = sensorreadingtransport.SharedProcessSensorReadingReceiver()
+#sender = sensorreadingtransport.SharedProcessSensorReadingSender(receiver)
+sender = sensorreadingtransport.UDPSensorReadingSender(sensorreadingtransport.UDP_RECEIVER_HOST,
+                                                        sensorreadingtransport.UDP_RECEIVER_PORT)
+srp = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method(throttle_time_secs=60)
 srp.initialise()
 while 1:
     # TODO: Perhaps srp's should be generators, that way they can avoid sending a None reading when we've read an
@@ -35,15 +39,11 @@ while 1:
     latest_humidity_percent = srp.get_latest_humidity()
     latest_temperature_celsius = srp.get_latest_temperature()
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)
-    # TODO: Avoid inserting reading when there's already one in the db for that sensor in the same minute
-    logger.debug("%s: Inserting reading... %s: %sc %s%% (count %s)" % \
-          (datetime.now(tz=tzlocal()),
-           current_datetime_no_secs,
-           latest_temperature_celsius,
-           latest_humidity_percent,
-            srp.get_reading_counter()))
-    SensorReading.objects.create(datetime_read=current_datetime_no_secs,
-        temperature_celsius=latest_temperature_celsius,
-        humidity_percent=latest_humidity_percent,
-        location=lounge_room_sensor)
+    logger.debug("%s: Inserting reading... %s: %sc %s%% (count %s)" %\
+                 (datetime.now(tz=tzlocal()),
+                  current_datetime_no_secs,
+                  latest_temperature_celsius,
+                  latest_humidity_percent,
+                  srp.get_reading_counter()))
+    sender.send(current_datetime_no_secs, LOUNGE_ROOM_SENSOR_ID, latest_temperature_celsius, latest_humidity_percent)
     wait_until_the_next_minute()
