@@ -72,32 +72,32 @@ class SharedProcessSensorReadingReceiver(BaseSensorReadingReceiver):
 
 class UDPSensorReadingReceiver(object):
 
-    class SensorReadingHandler(SocketServer.BaseRequestHandler):
-        def handle(self):
-            data = self.request[0].strip()
-            logger.debug("%s wrote: %s" % (self.client_address[0], data))
+    class SensorReadingHandler(SocketServer.BaseRequestHandler, BaseSensorReadingReceiver):
+        def extract_values_from_data(self, data):
+            """
+            parses the reading sent over the wire into values that can be put into the database.
+
+            The data contains the following fields:
+            0: sensor_id
+            1: seconds since the epoch as a float, or None, if the receiving timestamp is to be used.
+            2: timezone e.g. 10:00:00 or -05:00:00 or None if the receiving timezone is to be used.
+            3. temperature reading as a float
+            4. humidity reading as a float
+            """
             l = data.split(",")
             sensor_id = int(l[0])
             seconds_since_epoch = float(l[1])
             # FIXME - need to parse more than just the hour
-            # 10:00:00 or -05:00:00
             utc_offset_in_seconds = int(l[2].partition(":")[0])*60*60
-            datetime_read = datetime.datetime.fromtimestamp(seconds_since_epoch, tzoffset(None, utc_offset_in_seconds))
+            reading_datetime = datetime.datetime.fromtimestamp(seconds_since_epoch, tzoffset(None, utc_offset_in_seconds))
             temperature_celsius = Decimal(l[3])
             humidity_percent = Decimal(l[4])
-            self.persist(sensor_id, datetime_read, temperature_celsius, humidity_percent)
+            return reading_datetime, sensor_id, temperature_celsius, humidity_percent
 
-        def persist(self, sensor_id, datetime_read, temperature_celsius, humidity_percent):
-            """
-            Persists the newly received reading to the database
-            """
-            sensor_location = SensorLocation.objects.get(pk=sensor_id)
-            logger.debug("Inserting reading for sensor %s... %s: %sc %s%%" %\
-                         (sensor_id, datetime_read, temperature_celsius, humidity_percent))
-            SensorReading.objects.create(datetime_read=datetime_read,
-                temperature_celsius=temperature_celsius,
-                humidity_percent=humidity_percent,
-                location=sensor_location)
+        def handle(self):
+            data = self.request[0].strip()
+            logger.debug("%s wrote: %s" % (self.client_address[0], data))
+            self.persist(*self.extract_values_from_data(data))
 
 
     def __init__(self, binding_host, binding_port):
