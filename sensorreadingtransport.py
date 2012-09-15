@@ -65,12 +65,12 @@ class BaseSensorReadingReceiver(object):
 
 
 class SharedProcessSensorReadingReceiver(BaseSensorReadingReceiver):
-    # *args then args in persist?
     def receive(self, sensor_id, datetime_read, temperature_celsius, humidity_percent):
         self.persist(sensor_id, datetime_read, temperature_celsius, humidity_percent)
 
 
 class UDPSensorReadingReceiver(object):
+    # Do we want throttling here too, in case the arduino sends through readings too frequently?
 
     class SensorReadingHandler(SocketServer.BaseRequestHandler, BaseSensorReadingReceiver):
         def extract_values_from_data(self, data):
@@ -83,6 +83,9 @@ class UDPSensorReadingReceiver(object):
             2: timezone e.g. 10:00:00 or -05:00:00 or None if the receiving timezone is to be used.
             3. temperature reading as a float
             4. humidity reading as a float
+
+            Note that the arduino boards will not necessarily have a clock, so will not always be able to provide
+             a reading timestamp, so we take a timestamp where we can get it.
             """
             l = data.split(",")
             sensor_id = int(l[0])

@@ -32,12 +32,7 @@ sender = sensorreadingtransport.UDPSensorReadingSender(sensorreadingtransport.UD
                                                         sensorreadingtransport.UDP_RECEIVER_PORT)
 srp = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method(throttle_time_secs=60)
 srp.initialise()
-while 1:
-    # TODO: Perhaps srp's should be generators, that way they can avoid sending a None reading when we've read an
-    #  error (can't imagine why we'd get that, but it's possible that we could), and in the same way we can incorporate
-    #  the initialisation process, delaying the return of the first valid reading until initialisation is complete
-    latest_humidity_percent = srp.get_latest_humidity()
-    latest_temperature_celsius = srp.get_latest_temperature()
+for latest_temperature_celsius, latest_humidity_percent in srp:
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)
     logger.debug("%s: Inserting reading... %s: %sc %s%% (count %s)" %\
                  (datetime.now(tz=tzlocal()),

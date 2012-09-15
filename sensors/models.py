@@ -58,6 +58,7 @@ class SensorLocation(models.Model):
         return self.location
 
 class SensorReading(models.Model):
+    # TODO: Work out whether we,  want a uniqueness constraint on sensor id + time (minute)?
     objects = SensorReadingManager()
 
     class Meta:
