@@ -1,0 +1,11 @@
+Intro
+To be written.
+
+
+Why is the throttling at the sender level?
+- While throttling is necessary so that we don't record too many readings, throttling in the sender is nice
+  to the network. In the special case that an arduino sending over UDP bypasses python-based senders and thus
+  bypasses the sender throttling mechanism, we may want to add throttling to the UDP receiver. Throttling is
+  not at the provider level because the arduino may not have throttling (well, I haven't written throttling
+  yet in the arduino) and we need to have it somewhere
+

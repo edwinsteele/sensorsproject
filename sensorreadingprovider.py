@@ -10,7 +10,7 @@ __author__ = 'esteele'
 INITIALISING_STR="Initialising."
 
 class BaseSensorReadingProvider(threading.Thread):
-    def __init__(self, throttle_time_secs):
+    def __init__(self):
         threading.Thread.__init__(self)
         self.last_humidity_reading = None
         self.last_temperature_reading = None
@@ -20,21 +20,23 @@ class BaseSensorReadingProvider(threading.Thread):
         # Kick off the recorder
         self.start()
 
-    def _record_sensor_reading(self):
-        # implement in subclass
-        pass
-
     def __iter__(self):
         return self
 
     def next(self):
         # TODO: Perhaps include some checking here to make sure readings are valid before passing them along
-        return self.get_latest_temperature(), self.get_latest_humidity()
+        latest_temperature = self.get_latest_temperature()
+        latest_humidity = self.get_latest_humidity()
+        return latest_temperature, latest_humidity
 
     def run(self, *args, **kwargs):
        while 1:
             self._record_sensor_reading()
             self.reading_counter += 1
+
+    def _record_sensor_reading(self):
+        # implement in subclass
+        pass
 
     def initialise(self):
         """
@@ -72,9 +74,9 @@ class ArduinoSensorReadingProvider(BaseSensorReadingProvider):
     humidity_temp_string_re = re.compile("Humidity: (?P<humidity_perc>[0-9]{1,2}\.[0-9]{2}).*Temperature: (?P<temp_celsius>[0-9]{1,2}\.[0-9]{2}).*$")
     initialisation_re = re.compile("^Initialising DHT Sensor.*")
 
-    def __init__(self, serial_port, throttle_time_secs):
+    def __init__(self, serial_port):
         self.arduino_serial_port = serial_port
-        BaseSensorReadingProvider.__init__(self, throttle_time_secs)
+        BaseSensorReadingProvider.__init__(self)
 
     def _record_sensor_reading(self):
         # Goes directly to the sensor and updates class variables
@@ -107,9 +109,9 @@ class SimulatedSensorReadingProvider(BaseSensorReadingProvider):
     INITIAL_TEMPERATURE_CELSIUS = Decimal("18.00")
     INITIAL_HUMIDITY_PERC = Decimal("85.00")
 
-    def __init__(self, throttle_time_secs):
+    def __init__(self):
         self.srg = self._sensor_reading_generator(self.INITIAL_TEMPERATURE_CELSIUS, self.INITIAL_HUMIDITY_PERC)
-        BaseSensorReadingProvider.__init__(self, throttle_time_secs)
+        BaseSensorReadingProvider.__init__(self)
 
     def _sensor_reading_generator(self, t_celsius, h_percent):
         """
@@ -133,7 +135,7 @@ class SimulatedSensorReadingProvider(BaseSensorReadingProvider):
 class SensorReadingProviderFactory(object):
     @staticmethod
     # TODO - possibly make this a timedelta object instead of a time in secs?
-    def sensor_reading_provider_factory_method(throttle_time_secs):
+    def sensor_reading_provider_factory_method():
         # On my macbook, these physical USB ports exist
         #RIGHT_MACBOOK_USB_PORT="/dev/tty.usbmodem411"
         #LEFT_MACBOOK_USB_PORT="/dev/tty.usbmodem621"
@@ -147,16 +149,16 @@ class SensorReadingProviderFactory(object):
                   (arduino_port_name, arduino_port_desc, arduino_port_hw)
             print "Assuming it's an Arduino. Connecting..."
             arduino_serial = serial.Serial(arduino_port_name, 38400)
-            srp = ArduinoSensorReadingProvider(arduino_serial, throttle_time_secs)
+            srp = ArduinoSensorReadingProvider(arduino_serial)
 
         elif len(usb_modem_list) > 1:
             # TODO: Clean up what we print and do here
             print "More than one possible USB-connected Arduino boards. (%s) " % (usb_modem_list,)
             print "Falling back to Simulated Sensor."
-            srp = SimulatedSensorReadingProvider(throttle_time_secs)
+            srp = SimulatedSensorReadingProvider()
 
         else:
             print "No USB-connected Arduino boards. Using Simulated Sensor."
-            srp = SimulatedSensorReadingProvider(throttle_time_secs)
+            srp = SimulatedSensorReadingProvider()
 
         return srp

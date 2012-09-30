@@ -1,20 +1,39 @@
 import socket, SocketServer
-import datetime, logging, time
+import datetime, logging, time, urlparse
 from decimal import Decimal
 from sensors.models import SensorReading, SensorLocation
 from dateutil.tz import tzoffset
+import defaults
 
 logger = logging.getLogger("sensorsproject.sensorreadingtransport")
-
-# TODO - put this as a CNAME and an SRV record in DNS instead
-UDP_RECEIVER_HOST = "localhost"
-UDP_RECEIVER_PORT = 59999
 
 class BaseSensorReadingSender(object):
     def __init__(self):
         self.messages_sent = 0
-    def send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
+
+    def _do_send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
         pass
+
+    def send(self, *args, **kwargs):
+        """
+        We only want to record reading times with one minute accuracy and we don't want to get two
+        readings in the same period so we make sure we're not close to the beginning (>0:01s) or to the
+        end (<0:59s) just in case we get a little bit of a delay taking the reading.
+
+        Note that we take the time before we do the send call, otherwise we're gradually skewing our reading
+        period by the duration of the send (which we need to assume can be non-trivial)
+        """
+        t = time.localtime()
+        self._do_send(*args, **kwargs)
+        if t.tm_sec < 1:
+            sleep_time = 61.0
+        elif t.tm_sec < 59:
+            sleep_time = 59.0
+        else:
+            sleep_time = 60.0
+
+        logger.debug("Send complete. Sleeping for %s seconds" % (sleep_time,))
+        time.sleep(sleep_time)
 
 
 class UDPSensorReadingSender(BaseSensorReadingSender):
@@ -26,7 +45,7 @@ class UDPSensorReadingSender(BaseSensorReadingSender):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         BaseSensorReadingSender.__init__(self)
 
-    def send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
+    def _do_send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
         logger.debug("Sending reading for sensor %s... %s: %sc %s%%" %\
                      (sensor_id, datetime_read, temperature_celsius, humidity_percent))
         # probably better to break datetime_read into seconds since the epoch and another field with tz
@@ -42,9 +61,29 @@ class SharedProcessSensorReadingSender(BaseSensorReadingSender):
         self.receiver = shared_process_receiver
         BaseSensorReadingSender.__init__(self)
 
-    def send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
+    def _do_send(self, datetime_read, sensor_id, temperature_celsius, humidity_percent):
         # Pass it straight onto the shared process receiver
         self.receiver.receive(datetime_read, sensor_id, temperature_celsius, humidity_percent)
+
+
+class SensorReadingSenderFactory(object):
+    @staticmethod
+    def sensor_reading_provider_factory_method(destination_str):
+        u = urlparse.urlsplit(destination_str)
+        if destination_str.lower() == defaults.IN_PROCESS_DESTINATION:
+            # Given this is in-process, we need to create a receiver too as a part of constructing the sender
+            sender = SharedProcessSensorReadingSender(SharedProcessSensorReadingReceiver())
+        elif u.scheme == defaults.UDP_TRANSPORT_TYPE: # urlsplit does an implicit tolower() on the scheme
+            if u.port:
+                dport = u.port
+            else:
+                dport = defaults.DEFAULT_DESTINATION_PORT
+            sender = UDPSensorReadingSender(u.hostname, dport)
+        else:
+            # FIXME - is this the right behaviour, or raise an exception?
+            sender = None
+
+        return sender
 
 
 class BaseSensorReadingReceiver(object):
