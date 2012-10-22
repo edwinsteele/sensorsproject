@@ -18,19 +18,17 @@ parser.add_option("-s", "--sensor", dest="sensor", default=defaults.AUTO_DETERMI
     help="/dev/ttysxxx or auto or simulated")
 parser.add_option("-d", "--destination", dest="destination", default=defaults.IN_PROCESS_DESTINATION,
     help="udp://host[:port] or local for local")
+
 (options, args) = parser.parse_args()
 if options.sensor not in (defaults.ARDUINO_SENSOR_TYPE, defaults.SIMULATED_SENSOR_TYPE, defaults.AUTO_DETERMINE_SENSOR):
     parser.error("sensor-type must be %s or %s" % (defaults.ARDUINO_SENSOR_TYPE, defaults.SIMULATED_SENSOR_TYPE))
-
 if options.destination:
-    if options.destination != "local" or \
-        (len(options.destination) > 6 and options.destination[0:6] == "udp://"):
+    if options.destination != "local" and options.destination[0:6] != "udp://":
         parser.error("valid destination types are udp://host[:port] or local")
 
 
 sender = sensorreadingtransport.SensorReadingSenderFactory.sensor_reading_provider_factory_method(options.destination)
-# FIXME - use options.sensor
-reading_provider = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method()
+reading_provider = sensorreadingprovider.SensorReadingProviderFactory.sensor_reading_provider_factory_method(options.sensor)
 reading_provider.initialise()
 for latest_temperature_celsius, latest_humidity_percent in reading_provider:
     current_datetime_no_secs = datetime.now(tz=tzlocal()).replace(second=0, microsecond=0)

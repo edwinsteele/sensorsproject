@@ -2,6 +2,7 @@ import logging, random, re, threading, time
 from decimal import Decimal
 import serial
 import serial.tools.list_ports
+import defaults
 
 logger = logging.getLogger("sensorsproject.sensorreadingprovider")
 
@@ -134,31 +135,41 @@ class SimulatedSensorReadingProvider(BaseSensorReadingProvider):
 
 class SensorReadingProviderFactory(object):
     @staticmethod
-    # TODO - possibly make this a timedelta object instead of a time in secs?
-    def sensor_reading_provider_factory_method():
+    def sensor_reading_provider_factory_method(sensor_str):
         # On my macbook, these physical USB ports exist
         #RIGHT_MACBOOK_USB_PORT="/dev/tty.usbmodem411"
         #LEFT_MACBOOK_USB_PORT="/dev/tty.usbmodem621"
-
-        usb_modem_list = serial.tools.list_ports.grep(".*tty\.usbmodem[0-9]")
-
-        usb_modem_list = list(usb_modem_list)
-        if len(usb_modem_list) == 1:
-            arduino_port_name, arduino_port_desc, arduino_port_hw = list(usb_modem_list)[0]
-            print "Found a possible USB-connected Arduino board on %s (%s) with hardware type %s" %\
-                  (arduino_port_name, arduino_port_desc, arduino_port_hw)
-            print "Assuming it's an Arduino. Connecting..."
-            arduino_serial = serial.Serial(arduino_port_name, 38400)
-            srp = ArduinoSensorReadingProvider(arduino_serial)
-
-        elif len(usb_modem_list) > 1:
-            # TODO: Clean up what we print and do here
-            print "More than one possible USB-connected Arduino boards. (%s) " % (usb_modem_list,)
-            print "Falling back to Simulated Sensor."
+        if sensor_str == defaults.SIMULATED_SENSOR_TYPE:
+            logger.debug("Creating provider with simulated sensor type (specified)")
             srp = SimulatedSensorReadingProvider()
+
+        elif sensor_str == defaults.AUTO_DETERMINE_SENSOR:
+            logger.debug("Attempting to auto-detect sensor type")
+            logger.debug("Searching for arduino boards ")
+            # FIXME - use list_ports.comports() and manually pattern match
+            usb_modem_list = list(serial.tools.list_ports.grep(".*tty\.usbmodem[0-9]"))
+            if len(usb_modem_list) == 1:
+                arduino_port_name, arduino_port_desc, arduino_port_hw = list(usb_modem_list)[0]
+                logger.debug("Found one potential arduino board on %s (%s) with hardware type %s" %\
+                      (arduino_port_name, arduino_port_desc, arduino_port_hw))
+                logger.debug("Assuming it's an Arduino. Connecting at %s baud" % (defaults.DEFAULT_BAUD,))
+                arduino_serial = serial.Serial(arduino_port_name, defaults.DEFAULT_BAUD)
+                srp = ArduinoSensorReadingProvider(arduino_serial)
+
+            elif len(usb_modem_list) > 1:
+                # TODO: Clean up what we print and do here - include useful feedback for them so that they can perhaps specify a device directly
+                logger.debug("More than one potential arduino boards. (%s)" % (usb_modem_list,))
+                logger.debug("Falling back to Simulated Sensor. Specify a port on the commandline to avoid this behaviour")
+                srp = SimulatedSensorReadingProvider()
+
+            else:
+                logger.debug("No USB-connected Arduino boards. Using Simulated Sensor.")
+                srp = SimulatedSensorReadingProvider()
 
         else:
-            print "No USB-connected Arduino boards. Using Simulated Sensor."
-            srp = SimulatedSensorReadingProvider()
+            # A port has been specified
+            logger.debug("Attempting to connect to port '%s', as specified, at %s baud" % (sensor_str, defaults.DEFAULT_BAUD))
+            arduino_serial = serial.Serial(sensor_str, defaults.DEFAULT_BAUD)
+            srp = ArduinoSensorReadingProvider(arduino_serial)
 
         return srp
