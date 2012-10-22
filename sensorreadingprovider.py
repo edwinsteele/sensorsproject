@@ -13,6 +13,7 @@ INITIALISING_STR="Initialising."
 class BaseSensorReadingProvider(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
+        self.daemon = True
         self.last_humidity_reading = None
         self.last_temperature_reading = None
         self.last_diagnostic = INITIALISING_STR
