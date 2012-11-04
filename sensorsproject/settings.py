@@ -4,16 +4,6 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/Users/esteele/Code/sensorsproject/sensors_project.sqlite',                      # Or path to database file if using sqlite3.
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
-    }
-}
 
 TIME_ZONE = None
 LANGUAGE_CODE = 'en-us'
