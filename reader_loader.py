@@ -1,10 +1,10 @@
-import logging, optparse, os, sys
+import logging, optparse
 from datetime import datetime
 from dateutil.tz import tzlocal
 import defaults
 
-sys.path.append("/Users/esteele/Code/sensorsproject")
-os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
+#import os
+#os.environ["DJANGO_SETTINGS_MODULE"] = "sensorsproject.settings"
 
 import sensorreadingprovider, sensorreadingtransport
 
