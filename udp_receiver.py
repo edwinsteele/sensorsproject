@@ -1,4 +1,6 @@
-import logging, os, sys
+import logging
+import os
+import sys
 import defaults
 
 sys.path.append("/Users/esteele/Code/sensorsproject")
@@ -8,5 +10,5 @@ import sensorreadingtransport
 
 logger = logging.getLogger("sensorsproject.udp_receiver")
 
-receiver = sensorreadingtransport.UDPSensorReadingReceiver(defaults.DEFAULT_DESTINATION_HOST,
-                                                            defaults.DEFAULT_DESTINATION_PORT)
+receiver = sensorreadingtransport.UDPSensorReadingReceiver(
+    defaults.DEFAULT_DESTINATION_HOST, defaults.DEFAULT_DESTINATION_PORT)
