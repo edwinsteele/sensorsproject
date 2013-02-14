@@ -1,0 +1,4 @@
+# Don't include _base.txt as we don't want django
+distribute==0.6.29
+pyserial==2.6
+python-dateutil==2.1

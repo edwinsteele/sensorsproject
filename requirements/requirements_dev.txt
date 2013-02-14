@@ -1,0 +1,5 @@
+-r _base.txt # includes the _base.txt requirements file
+django-debug-toolbar==0.9.4
+pyserial==2.6
+six==1.2.0
+wsgiref==0.1.2

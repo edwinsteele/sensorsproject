@@ -1,10 +1,22 @@
+__author__ = 'esteele'
+
+import os
+from django.core.exceptions import ImproperlyConfigured
+
+
+def get_env_variable(var_name):
+    """ Get the environment variable or return exception """
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        error_msg = "Set the %s env variable" % var_name
+        raise ImproperlyConfigured(error_msg)
+
 ADMINS = (
     ('Edwin Steele', 'edwin@wordspeak.org'),
 )
 
 MANAGERS = ADMINS
-
-
 TIME_ZONE = None
 LANGUAGE_CODE = 'en-us'
 
@@ -19,6 +31,8 @@ MEDIA_URL = ''
 
 STATIC_ROOT = ''
 STATIC_URL = '/static/'
+
+SECRET_KEY = get_env_variable('SENSORS_SECRET_KEY')
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -64,31 +78,30 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'standard': {
-            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            'datefmt' : "%d/%b/%Y %H:%M:%S"
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%d/%b/%Y %H:%M:%S"
         },
     },
     'handlers': {
-        'console':{
-            'level':'DEBUG',
-            'class':'logging.StreamHandler',
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
             'formatter': 'standard'
         },
     },
     'loggers': {
         'django': {
-            'handlers':['console'],
+            'handlers': ['console'],
             'propagate': True,
-            'level':'INFO',
+            'level': 'INFO',
         },
         'sensorsproject': {
             'handlers': ['console'],
             'level': 'DEBUG',
-            },
+        },
         'sensors': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
     }
 }
-
