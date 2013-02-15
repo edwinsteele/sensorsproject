@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 
-from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from dateutil.tz import tzutc, tzlocal
 
@@ -11,9 +10,13 @@ from sensors.models import SensorReading
 logger = logging.getLogger(__name__)
 
 
-def home(request):
-    return HttpResponse("Hello, world. You're at the poll index.")
+class HomeViewClass(TemplateView):
+    template_name = "sensors/base.html"
 
+    def get(self, request, *args, **kwargs):
+        context = {
+        }
+        return self.render_to_response(context)
 
 class BaseSensorViewClass(TemplateView):
     template_name = "sensors/one_reading.html"

@@ -43,9 +43,11 @@
             <a class="brand" href="#">Project name</a>
             <div class="nav-collapse collapse">
                 <ul class="nav">
-                    <li class="active"><a href="#">Home</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <!-- FIXME yuk... dont hardcode a path -->
+                    <li><a href="{% url home %}">Home</a></li>
+                    <li><a href="{% url latest %}">Latest</a></li>
+                    <li><a href="{% url recent %}">Recent</a></li>
+                    <li><a href="{% url canned %}">Canned</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
         </div>
