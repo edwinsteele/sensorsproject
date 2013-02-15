@@ -1,7 +1,5 @@
 __author__ = 'esteele'
 
-from .base import *
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -15,7 +13,4 @@ DATABASES = {
 
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
-
-STATICFILES_DIRS += ('/home/esteele/sensorsproject/sensors/static',)
-TEMPLATE_DIRS += ('/home/esteele/sensorsproject/templates',)
 

@@ -1,6 +1,7 @@
 __author__ = 'esteele'
 
 import os
+from unipath import Path
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -12,6 +13,8 @@ def get_env_variable(var_name):
         error_msg = "Set the %s env variable" % var_name
         raise ImproperlyConfigured(error_msg)
 
+PROJECT_ROOT = Path(__file__).ancestor(3)
+
 ADMINS = (
     ('Edwin Steele', 'edwin@wordspeak.org'),
 )
@@ -19,23 +22,23 @@ ADMINS = (
 MANAGERS = ADMINS
 TIME_ZONE = None
 LANGUAGE_CODE = 'en-us'
-
 SITE_ID = 1
-
 USE_I18N = False
 USE_L10N = True
 USE_TZ = True
 
-MEDIA_ROOT = ''
-MEDIA_URL = ''
-
-STATIC_ROOT = ''
+MEDIA_ROOT = PROJECT_ROOT.child('media')
+STATIC_ROOT = PROJECT_ROOT.child('static')
 STATIC_URL = '/static/'
 
 SECRET_KEY = get_env_variable('SENSORS_SECRET_KEY')
 
 # Additional locations of static files
 STATICFILES_DIRS = (
+    PROJECT_ROOT.child('assets'),
+)
+TEMPLATE_DIRS = (
+    PROJECT_ROOT.child('templates'),
 )
 
 STATICFILES_FINDERS = (
@@ -60,9 +63,6 @@ ROOT_URLCONF = 'sensorsproject.urls'
 
 WSGI_APPLICATION = 'sensorsproject.wsgi.application'
 
-TEMPLATE_DIRS = (
-)
-
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -78,7 +78,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'standard': {
-            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'format':  "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
             'datefmt': "%d/%b/%Y %H:%M:%S"
         },
     },
