@@ -2,15 +2,14 @@ __author__ = 'esteele'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/home/esteele/sensorsproject/sensors_project.sqlite',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'esteele_sensors_sensors',
         'USER': '',
         'PASSWORD': '',
-        'HOST': '',
+        'HOST': 'localhost',
         'PORT': '',
-        }
+    }
 }
 
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
-
