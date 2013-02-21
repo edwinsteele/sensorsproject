@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.views.generic.base import TemplateView
 from dateutil.tz import tzutc, tzlocal
+from django.views.generic import CreateView
 
 from sensors.models import SensorReading
 
@@ -98,16 +99,22 @@ class BaseSensorViewClass(TemplateView):
         latest = self.get_latest_reading_time()
         readings_in_period = SensorReading.objects.filter(
             datetime_read__gte=earliest, datetime_read__lte=latest)
-        trend_duration, temperature_delta, humidity_delta = \
-            SensorReading.objects.get_trend_data(readings_in_period)
-        temperature_trend_str, humidity_trend_str = \
-            self.get_trend_str(trend_duration, temperature_delta, humidity_delta)
-        most_recent_reading = readings_in_period[len(readings_in_period) - 1]
+        if len(readings_in_period):
+            trend_duration, temperature_delta, humidity_delta = \
+                SensorReading.objects.get_trend_data(readings_in_period)
+            temperature_trend_str, humidity_trend_str = self.get_trend_str(
+                trend_duration, temperature_delta, humidity_delta)
+            most_recent_reading = readings_in_period[len(readings_in_period) - 1]
+        else:
+            most_recent_reading = None
+            temperature_trend_str = "-"
+            humidity_trend_str = "-"
+
         context = {"one_reading": most_recent_reading,
-                   "reading_context": readings_in_period,
-                   "temperature_trend_str": temperature_trend_str,
-                   "humidity_trend_str": humidity_trend_str,
-                   "point_start_str": self.point_start_string()}
+               "reading_context": readings_in_period,
+               "temperature_trend_str": temperature_trend_str,
+               "humidity_trend_str": humidity_trend_str,
+               "point_start_str": self.point_start_string()}
         return self.render_to_response(context)
 
 
@@ -131,3 +138,11 @@ class CannedViewClass(BaseSensorViewClass):
 
     def get_latest_reading_time(self):
         return datetime(2012, 8, 14, 23, 59, 59, tzinfo=tzlocal())
+
+
+class SensorReadingCreateView(CreateView):
+    model = SensorReading
+
+    def form_valid(self, form):
+        # Do custom logic here
+        return super(SensorReadingCreateView, self).form_valid(form)
