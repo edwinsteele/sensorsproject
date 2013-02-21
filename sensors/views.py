@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.views.generic.base import TemplateView
 from dateutil.tz import tzutc, tzlocal
 from django.views.generic import CreateView
+from django.template import RequestContext
 
 from sensors.models import SensorReading
 
@@ -15,9 +16,8 @@ class HomeViewClass(TemplateView):
     template_name = "sensors/base.html"
 
     def get(self, request, *args, **kwargs):
-        context = {
-        }
-        return self.render_to_response(context)
+        return self.render_to_response(RequestContext(request, {}))
+
 
 class BaseSensorViewClass(TemplateView):
     template_name = "sensors/one_reading.html"
@@ -95,6 +95,7 @@ class BaseSensorViewClass(TemplateView):
                                                      ert.second)
 
     def get(self, request, *args, **kwargs):
+        logging.debug("get_template_names() is %s", self.get_template_names())
         earliest = self.get_earliest_reading_time()
         latest = self.get_latest_reading_time()
         readings_in_period = SensorReading.objects.filter(
@@ -110,11 +111,17 @@ class BaseSensorViewClass(TemplateView):
             temperature_trend_str = "-"
             humidity_trend_str = "-"
 
-        context = {"one_reading": most_recent_reading,
-               "reading_context": readings_in_period,
-               "temperature_trend_str": temperature_trend_str,
-               "humidity_trend_str": humidity_trend_str,
-               "point_start_str": self.point_start_string()}
+        # context = {"one_reading": most_recent_reading,
+        #        "reading_context": readings_in_period,
+        #        "temperature_trend_str": temperature_trend_str,
+        #        "humidity_trend_str": humidity_trend_str,
+        #        "point_start_str": self.point_start_string()}
+        context = RequestContext(request,
+                                 {"one_reading": most_recent_reading,
+                   "reading_context": readings_in_period,
+                   "temperature_trend_str": temperature_trend_str,
+                   "humidity_trend_str": humidity_trend_str,
+                   "point_start_str": self.point_start_string()})
         return self.render_to_response(context)
 
 

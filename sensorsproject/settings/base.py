@@ -28,14 +28,13 @@ USE_L10N = True
 USE_TZ = True
 
 MEDIA_ROOT = PROJECT_ROOT.child('media')
-STATIC_ROOT = PROJECT_ROOT.child('static')
+STATIC_ROOT = PROJECT_ROOT.child('sitestatic')
 STATIC_URL = '/static/'
 
 SECRET_KEY = get_env_variable('SENSORS_SECRET_KEY')
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    PROJECT_ROOT.child('assets'),
 )
 TEMPLATE_DIRS = (
     PROJECT_ROOT.child('templates'),
@@ -49,6 +48,15 @@ STATICFILES_FINDERS = (
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'django.core.context_processors.static',
+    'django.contrib.auth.context_processors.auth',
+    'django.contrib.messages.context_processors.messages',
 )
 
 MIDDLEWARE_CLASSES = (

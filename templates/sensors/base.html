@@ -40,14 +40,13 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </a>
-            <a class="brand" href="#">Project name</a>
+            <a class="brand" href="{% url home %}">Sensors</a>
             <div class="nav-collapse collapse">
                 <ul class="nav">
-                    <!-- FIXME yuk... dont hardcode a path -->
-                    <li><a href="{% url home %}">Home</a></li>
                     <li><a href="{% url latest %}">Latest</a></li>
                     <li><a href="{% url recent %}">Recent</a></li>
                     <li><a href="{% url canned %}">Canned</a></li>
+                    <li><a href="{% url home %}">Add</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
         </div>
