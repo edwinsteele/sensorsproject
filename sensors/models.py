@@ -1,15 +1,19 @@
-from django.db import models
 from datetime import datetime, timedelta
-from dateutil.tz import tzlocal, tzutc
 import logging
 
+from django.db import models
+from dateutil.tz import tzlocal, tzutc
+
+
 logger = logging.getLogger(__name__)
+
 
 class SensorReadingManager(models.Manager):
     # TODO - factor in the sensor_id!! when doing queries
     def get_trend_data(self, readings_in_period):
         """
-        Produces a tuple of three values that describe the trend of the data over a recent period. Trend periods:
+        Produces a tuple of three values that describe the trend of the data
+         over a recent period. Trend periods:
         < 23 hours of readings: 5 minutes
         < 6d 23h of readings: 1 hour
         > 6d 23h of readings: 1 day
@@ -20,17 +24,23 @@ class SensorReadingManager(models.Manager):
         2. temperature delta (float) during the trend period
         3. humidity delta (float) during the trend period
 
-        Initially we'll determine the trend by comparing the last reading with the reading at the start of the trend
-        period, but can probably do better than that.
+        Initially we'll determine the trend by comparing the last reading with
+         the reading at the start of the trend period, but can probably do
+         better than that.
         """
-        # TODO: Work out whether we want to infer the earliest reading time and latest reading time from the readings
-        #  in the database, or whether they should come from the parameters that are available in the calling function.
-        # Get the latest sensor reading first because it fully evaluates the query set, which means the first_sensor_reading
-        #  can be served from the cache. If the order is reversed, the slicing places a limit 1 on the query which
-        #  means that that the latest_sensor_reading cannot be served from cache
-        latest_sensor_reading = readings_in_period[len(readings_in_period)-1]
+        # TODO: Work out whether we want to infer the earliest reading time and
+        #  latest reading time from the readings in the database, or whether
+        #  they should come from the parameters that are available in the
+        #  calling function. Get the latest sensor reading first because it
+        #  fully evaluates the query set, which means the first_sensor_reading
+        #  can be served from the cache. If the order is reversed, the slicing
+        #  places a limit 1 on the query which means that that the
+        #  latest_sensor_reading cannot be served from cache
+        logging.debug("Readings in period is %s", len(readings_in_period))
+        latest_sensor_reading = readings_in_period[len(readings_in_period) - 1]
         first_sensor_reading = readings_in_period[0]
-        length_of_period = latest_sensor_reading.datetime_read - first_sensor_reading.datetime_read
+        length_of_period = latest_sensor_reading.datetime_read -\
+            first_sensor_reading.datetime_read
         if length_of_period < timedelta(hours=23):
             trend_duration = timedelta(minutes=5)
         elif length_of_period < timedelta(days=6, hours=23):
@@ -38,7 +48,8 @@ class SensorReadingManager(models.Manager):
         else:
             trend_duration = timedelta(days=1)
 
-        trend_starting_point = latest_sensor_reading.datetime_read - trend_duration
+        trend_starting_point = latest_sensor_reading.datetime_read -\
+            trend_duration
         for reading in readings_in_period:
             if reading.datetime_read > trend_starting_point:
                 trend_start_sensor_reading = reading
@@ -46,8 +57,10 @@ class SensorReadingManager(models.Manager):
         else:
             # FIXME ... BOOM!
             trend_start_sensor_reading = None
-        temperature_delta = latest_sensor_reading.temperature_celsius - trend_start_sensor_reading.temperature_celsius
-        humidity_delta = latest_sensor_reading.humidity_percent - trend_start_sensor_reading.humidity_percent
+        temperature_delta = latest_sensor_reading.temperature_celsius - \
+            trend_start_sensor_reading.temperature_celsius
+        humidity_delta = latest_sensor_reading.humidity_percent - \
+            trend_start_sensor_reading.humidity_percent
         return trend_duration, temperature_delta, humidity_delta
 
 
@@ -57,22 +70,28 @@ class SensorLocation(models.Model):
     def __unicode__(self):
         return self.location
 
+
 class SensorReading(models.Model):
-    # TODO: Work out whether we,  want a uniqueness constraint on sensor id + time (minute)?
+    # TODO: Work out whether we,  want a uniqueness constraint on
+    #  sensor id + time (minute)?
     objects = SensorReadingManager()
 
     class Meta:
         ordering = ["datetime_read"]
 
     # datetime_read is stored in the database as UTC
-    datetime_read = models.DateTimeField('Date and Time of reading', db_index=True)
+    datetime_read = models.DateTimeField('Date and Time of reading',
+                                         db_index=True)
     temperature_celsius = models.DecimalField(max_digits=3, decimal_places=1)
     humidity_percent = models.DecimalField(max_digits=3, decimal_places=1)
     location = models.ForeignKey(SensorLocation)
 
     def __unicode__(self):
         return "Reading from sensor %s at %s - temp: %s hum: %s" % \
-            (self.location, self.datetime_read, self.temperature_celsius, self.humidity_percent)
+            (self.location,
+             self.datetime_read,
+             self.temperature_celsius,
+             self.humidity_percent)
 
     def is_current(self):
         delta = datetime.now(tz=tzutc()) - self.datetime_read
