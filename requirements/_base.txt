@@ -1,4 +1,4 @@
-Django==1.4.2
+Django==1.4.5
 distribute==0.6.29
 python-dateutil==2.1
 Unipath==0.2.1
